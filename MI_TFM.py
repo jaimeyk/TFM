@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import altair as alt
 
-import seaborn as sns
-import seaborn.objects as so
 
 microdata = pd.read_csv('cbecs2018_final_public.csv')
 microdatasi = microdata.copy()
@@ -1609,4 +1607,5 @@ elif grafica_idx == "Consumo de Energía por Edad y Tipo de Energía":
     st.pyplot(fig, use_container_width=True)
 
 st.markdown("---")
+
 st.caption("Desarrollado por JYK")
