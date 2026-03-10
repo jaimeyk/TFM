@@ -5,5 +5,3 @@ matplotlib
 matplotlib.pyplot
 plotly.express
 altair
-seaborn
-seaborn.objects
