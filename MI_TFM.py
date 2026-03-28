@@ -68,175 +68,6 @@ microdatasi['PBAN'] = microdatasi['PBAN'].astype(int)
 microdatasi['CLIMAF'] = microdatasi['MFHTBTU'] + microdatasi['MFCLBTU'] + microdatasi['MFVNBTU']
 microdatasi['CLIMAE'] = microdatasi['ELHTBTU'] + microdatasi['ELCLBTU'] + microdatasi['ELVNBTU']
 
-#AQUÍ SE DETALLAN LAS GRÁFICAS CORRESPONDIENTES A LAS DISTINTAS TIPOLOGÍAS - DEBEN SER DENTRO DE LOS RATIOS Y VARÍAN SEGÚN EL TIPO
-graficas_por_edificio = {
-    "Alojamiento": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Almacenes": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Oficina": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Educación": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Alimentación": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Edificio público": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Sanitario": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Servicios": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Comercio": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Vacíos": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ],
-    "Otros": [
-        "Estructura del área por tamaños",
-        "Distribución de superficie por año de construcción",
-        "Distribución de Superficies por Categoría Climática",
-        "Distribución del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Análisis del Consumo por Clima y Usos Finales",
-        "Análisis del Consumo por año y Usos Finales",
-        "Análisis del Consumo por tamaño y Usos Finales",
-        "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
-        "Consumo de Energía por Clima y Tipo de Energía",
-        "Consumo de Energía por Tamaño y Tipo de Energía",
-        "Consumo de Energía por Edad y Tipo de Energía"
-    ]
-}
-
  # Definir tipos de edificios
 tipo_edificio = ["Vacíos", "Oficina", "Almacenes","Alimentación", 
                  "Edificio público", "Sanitario", "Educación", 
@@ -257,24 +88,50 @@ with col1:
 
 st.markdown("---")
 
+tipo_edificio_PBAN = {
+    "Vacíos": 1,
+    "Oficina": 2,
+    "Almacenes": 3,
+    "Alimentación": 4,
+    "Servicios": 5,
+    "Sanitario": 6,
+    "Edificio público": 7,
+    "Educación": 8,
+    "Alojamiento": 9,
+    "Comercio": 10,
+    "Otros": 11
+}
+
+# FILTRO TIPO
+PBAN_tipo = tipo_edificio_PBAN[tipo]
+microdatasi = microdatasi[microdatasi["PBAN"] == PBAN_tipo]
+
 #FILTRO SUBTIPO
-subtipo_prueba = [[None],['Oficina'],
-                    ['Laboratorio'],['Centro de distribución','Almacén sin refrigeración'
-                    ,'Alquiler de almacenes públicos','Almacén con refrigeración'],['Venta de alimentos','Restauración'],
-                    ['Orden público','Religión','Servicio público'],
-                    ['Hospital','Ambulatorio'],['Infantil/Guardería','Escuela primaria','Escuela secundaria','Bachillerato','Universidad'],
-                    ['Residencia de ancianos','Residencia universitaria','Hotel','Motel/B&B','Otro hospedaje'],
-                    ['Centro comercial','Tiendas'],
-                    ['Servicios']]
+# subtipo_prueba = [[None],
+#                     ['Oficina'],
+#                     ['Centro de distribución','Almacén sin refrigeración','Alquiler de almacenes públicos','Almacén con refrigeración'],
+#                     ['Venta de alimentos','Restauración'],
+#                     ['Orden público','Religión','Servicio público'],
+#                     ['Hospital','Ambulatorio'],
+#                     ['Infantil/Guardería','Escuela primaria','Escuela secundaria','Bachillerato','Universidad'],
+#                     ['Residencia de ancianos','Residencia universitaria','Hotel','Motel/B&B','Otro hospedaje'],
+#                     ['Centro comercial','Tiendas'],
+#                     ['Servicios'], 
+#                     ['Laboratorio']]
 
-
-        # subtipo_edificio = [None,'Oficina',
-        #                     'Laboratorio','Centro de distribución','Almacén sin refrigeración',
-        #                     'Alquiler de almacenes públicos','Almacén con refrigeración','Venta de alimentos','Restauración',
-        #                     'Orden público','Religión','Servicio público',
-        #                     'Hospital','Ambulatorio','Infantil/Guardería','Escuela primaria','Escuela secundaria','Bachillerato','Universidad',
-        #                     'Residencia de ancianos','Residencia universitaria','Hotel','Motel/B&B','Otro hospedaje',
-        #                     'Centro comercial','Tiendas','Servicios']
+subtipos_por_tipo = {
+    "Vacíos": [None],
+    "Oficina": ['Oficina'],
+    "Almacenes": ['Centro de distribución', 'Almacén sin refrigeración', 'Alquiler de almacenes públicos', 'Almacén con refrigeración'],
+    "Alimentación": ['Venta de alimentos', 'Restauración'],
+    "Edificio público": ['Orden público', 'Religión', 'Servicio público'],
+    "Sanitario": ['Hospital', 'Ambulatorio'],
+    "Educación": ['Infantil/Guardería', 'Escuela primaria', 'Escuela secundaria', 'Bachillerato', 'Universidad'],
+    "Alojamiento": ['Residencia de ancianos', 'Residencia universitaria', 'Hotel', 'Motel/B&B', 'Otro hospedaje'],
+    "Comercio": ['Centro comercial', 'Tiendas'],
+    "Servicios": ['Servicios'],
+    "Otros": ['Laboratorio']
+}
 
 subtipo_edificio_PBAPLUS = {
   'Oficina': [2, 3, 4, 5, 6, 7],
@@ -302,23 +159,24 @@ subtipo_edificio_PBAPLUS = {
   'Otro hospedaje': [40],
   'Centro comercial': [50, 51],
   'Tiendas': [42, 43],
-  'Servicios': [44, 46, 47, 48]
+  'Servicios': [44, 46, 47, 48],
+  'Otros': [49]
 }
 
     # Seleccionar subtipo
 with col2:
     subtipo = st.selectbox("Seleccione subtipo de edificio:", 
-                           subtipo_prueba[tipo_edificio.index(tipo)],
+                           subtipos_por_tipo[tipo],
                            index=None, placeholder="Todos")
 
 if subtipo is not None:
-    # Obtener valores PBAPLUS
     PBAPLUS_values = subtipo_edificio_PBAPLUS.get(subtipo.strip(), [])
-    # Filtrar Edificios según los valores PBAPLUS
     if PBAPLUS_values:
         microdatasi = microdatasi[microdatasi["PBAPLUS"].isin(PBAPLUS_values)]
-    else:
-        microdatasi = microdatasi[microdatasi["PBAPLUS"] == 0]
+
+if microdatasi.empty:
+    st.warning("No hay datos disponibles para la combinación de tipo y subtipo seleccionada.")
+    st.stop()
 
 #FILTRO TAMAÑO
     #TENGO QUE RECLASIFICAR ESTE FILTRO SEGÚN EL TIPO DE EDIFICIO...
@@ -527,10 +385,6 @@ clasif_tipo_grafica={"Distribución":[
 
 tipo_grafica = ["Distribución", "Estructura", "Análisis", "Consumo", "Actividad"]
 
-# graficas = clasif_tipo_grafica[tipo_grafica]
-# graficas = graficas_por_edificio[tipo]
-# graficas_tipo = graficas_por_edificio[tipo_grafica]
-
 # PESTAÑAS IZQUIERDA - Gráficas según el tipo de edificio seleccionado
 
 with st.sidebar:
@@ -542,6 +396,23 @@ with st.sidebar:
         key="grafica_seleccionada"
     )
 graficas = clasif_tipo_grafica[grafica_tipo]
+
+if tamaño is not None and grafica_tipo == "Estructura":
+    graficas = [
+        g for g in graficas
+        if g != "Estructura del área por tamaños"
+    ]
+elif tamaño is not None and grafica_tipo == "Distribución":
+    graficas = [
+        g for g in graficas
+        if g != "Distribución del consumo por tamaño"
+    ]
+elif tamaño is not None and grafica_tipo == "Análisis":
+    graficas = [
+        g for g in graficas
+        if g != "Análisis del Consumo por tamaño y Usos Finales"
+    ]
+
 with st.sidebar:
     grafica_idx = st.radio("Seleccione la gráfica:", graficas)
 
@@ -554,14 +425,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 x = np.arange(1990, 2023)
-
-if tamaño is not None and graficas == "Estructura":
-#AQUI ELIMINO LAS GRÁFICAS QUE TIENEN QUE VER CON LOS TAMAÑOS, QUE SE VEN ALTERADAS POR ESTE FILTRO
-    graficas.remove("Estructura del área por tamaños")
-elif tamaño is not None and grafica_idx == "Distribución":
-    graficas.remove("Distribución del consumo por tamaño")
-elif tamaño is not None and grafica_idx == "Análisis":
-    graficas.remove("Análisis del Consumo por tamaño y Usos Finales")
 
 #FILTRO NUMERO DE PLANTAS
 plantas_edificio = ['1','2','3','4','5','6','7','8','9','10-14','15 o más']
@@ -618,7 +481,7 @@ if edad is not None:
 
 #AQUÍ VOY A DESARROLLAR CADA TIPOLOGÍA, DETALLANDO LAS DISTINTAS GRÁFICAS, SUS NOMBRES Y LOS TAMAÑOS (m2) DE CADA TIPO
 if tipo == "Alojamiento":
-    pban = 9
+    # pban = 9
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[microdatasi['SQFT'] <= 10000, 'SQFTCM'] = 1
     microdatasi.loc[(microdatasi['SQFT'] > 10000) & (microdatasi['SQFT'] < 20000), 'SQFTCM'] = 2
@@ -640,7 +503,7 @@ elif tipo == "Almacenes":
     nombres_simples = ['S', 'M', 'L']
 
 elif tipo == "Educación":
-    pban = 8
+    # pban = 8
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[microdatasi['SQFT'] <= 5000, 'SQFTCM'] = 1
     microdatasi.loc[(microdatasi['SQFT'] > 5000) & (microdatasi['SQFT'] <= 10000), 'SQFTCM'] = 2
@@ -652,7 +515,7 @@ elif tipo == "Educación":
     nombres_simples = ['XS', 'S', 'M', 'L']
 
 elif tipo == "Oficina":
-    pban = 2
+    # pban = 2
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[microdatasi['SQFT'] <= 500, 'SQFTCM'] = 1
     microdatasi.loc[(microdatasi['SQFT'] > 500) & (microdatasi['SQFT'] <= 5000), 'SQFTCM'] = 2
@@ -665,7 +528,7 @@ elif tipo == "Oficina":
     nombres_simples = ['XS', 'S', 'M', 'L', 'XL']
 
 elif tipo == "Alimentación":
-    pban = 4
+    # pban = 4
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[microdatasi['SQFT'] <= 250, 'SQFTCM'] = 1
     microdatasi.loc[(microdatasi['SQFT'] > 250) & (microdatasi['SQFT'] < 500), 'SQFTCM'] = 2
@@ -676,7 +539,7 @@ elif tipo == "Alimentación":
     nombres_simples = ['S', 'M', 'L']
 
 elif tipo == "Edificio público":
-    pban = 7
+    # pban = 7
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[microdatasi['SQFT'] <= 1000, 'SQFTCM'] = 1
     microdatasi.loc[(microdatasi['SQFT'] > 1000) & (microdatasi['SQFT'] < 5000), 'SQFTCM'] = 2
@@ -687,7 +550,7 @@ elif tipo == "Edificio público":
     nombres_simples = ['S', 'M', 'L']
 
 elif tipo == "Sanitario":
-    pban = 6
+    # pban = 6
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[microdatasi['SQFT'] <= 10000, 'SQFTCM'] = 1
     microdatasi.loc[(microdatasi['SQFT'] > 10000) & (microdatasi['SQFT'] < 30000), 'SQFTCM'] = 2
@@ -698,7 +561,7 @@ elif tipo == "Sanitario":
     nombres_simples = ['S', 'M', 'L']
 
 elif tipo == "Servicios":
-    pban = 5
+    # pban = 5
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[microdatasi['SQFT'] <= 500, 'SQFTCM'] = 1
     microdatasi.loc[(microdatasi['SQFT'] > 500) & (microdatasi['SQFT'] < 2000), 'SQFTCM'] = 2
@@ -709,7 +572,7 @@ elif tipo == "Servicios":
     nombres_simples = ['S', 'M', 'L']
 
 elif tipo == "Comercio":
-    pban = 10
+    # pban = 10
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[(microdatasi['SQFT']) <= 2000, 'SQFTCM'] = 1
     microdatasi.loc[((microdatasi['SQFT']) > 2000) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 2 
@@ -721,7 +584,7 @@ elif tipo == "Comercio":
     nombres_simples = ['XS', 'S', 'M', 'L']
 
 elif tipo == "Vacíos":
-    pban = 1
+    # pban = 1
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[(microdatasi['SQFT']) <= 500, 'SQFTCM'] = 1
     microdatasi.loc[((microdatasi['SQFT']) > 500) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 2 
@@ -733,7 +596,7 @@ elif tipo == "Vacíos":
     nombres_simples = ['XS', 'S', 'M', 'L']
 
 elif tipo == "Otros":
-    pban = 11
+    # pban = 11
     # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
     microdatasi.loc[(microdatasi['SQFT']) <= 1000, 'SQFTCM'] = 1
     microdatasi.loc[((microdatasi['SQFT']) > 1000) & ((microdatasi['SQFT']) <= 2500), 'SQFTCM'] = 2 
@@ -756,7 +619,7 @@ if grafica_idx == "Estructura del área por tamaños":
     # Bucle para calcular los valores y medias para cada 'SQFTCM'
     n = len(nombres_simples)+1
     for i in range(1, n):
-        Edi = microdatasi.query(f'SQFTCM=={i} and PBAN == {pban}')
+        Edi = microdatasi.query(f'SQFTCM=={i}')
         SQEdi = Edi['SQFT'] * Edi['FINALWT']
         TotalEdi = SQEdi.sum()
         TotalWTEdi = Edi['FINALWT'].sum()
@@ -808,7 +671,7 @@ elif grafica_idx == "Distribución de superficie por año de construcción":
 
     # Función para calcular la superficie total y media por rango de años
     def calcular_superficie(rango_yrconcn, microdatasi):
-        edi = microdatasi.query(f'YRCONCN == {rango_yrconcn} and PBAN == {pban}')
+        edi = microdatasi.query(f'YRCONCN == {rango_yrconcn}')
         sq_edi = edi['SQFT'] * edi['FINALWT']
         total_edi = sq_edi.sum()  # Superficie total de ese rango de años
         total_wt_edi = edi['FINALWT'].sum()  # Número de edificios
@@ -883,7 +746,7 @@ elif grafica_idx == "Distribución de Superficies por Categoría Climática":
     # Calcular TotalEdi y MediaEdi para cada categoría
     for category, pubclim in climate_categories.items():
         # Filtrar el DataFrame
-        Edi = microdatasi.query(f'PUBCLIM=={pubclim} and PBAN == {pban}') #El tipo se cambia aquí
+        Edi = microdatasi.query(f'PUBCLIM=={pubclim}') #El tipo se cambia aquí
 
         # Calcular la superficie total y media
         SQEdi = Edi['SQFT'] * Edi['FINALWT']
@@ -928,7 +791,7 @@ elif grafica_idx == "Distribución del consumo por tamaño":
 
     # Cálculo de los consumos totales y medios por categoría
     for sqftcm in sqftcm_ranges:
-        edi = microdatasi.query(f'SQFTCM == {sqftcm} and PBAN == {pban}')
+        edi = microdatasi.query(f'SQFTCM == {sqftcm}')
         # Consumo total ponderado
         total_consumption = (edi['MFBTU'] * edi['FINALWT']).sum()
         total_consumption_values.append(total_consumption)
@@ -967,7 +830,7 @@ elif grafica_idx == "Estructura del consumo por usos":
     usos = ['MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU']
     usos_labels = ['Calefacción', 'Aire acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
 
-    Edi = microdatasi.query(f'PBAN == {pban}')
+    Edi = microdatasi.copy()
     if Edi.empty:
         st.warning("No hay datos disponibles para los filtros seleccionados.")
         st.stop()
@@ -1157,7 +1020,7 @@ elif grafica_idx == "Análisis del Consumo por Clima y Usos Finales":
 
     # Selección de edificios comerciales por cada zona climática
     for pubclim in range(1, 6):
-        Edi = microdatasi.query(f'PBAN == {pban} and PUBCLIM == {pubclim}')
+        Edi = microdatasi.query(f'PUBCLIM == {pubclim}')
         consumos = []
         total_consumo = (Edi[usos] * Edi['FINALWT'].values.reshape(-1, 1)).sum()  # Suma de todos los consumos para el clima actual
 
@@ -1200,7 +1063,7 @@ elif grafica_idx == "Análisis del Consumo por año y Usos Finales":
 
     # Selección de edificios comerciales por cada zona climática
     for YRCONCN in range(1, 5):
-        Edi = microdatasi.query(f'PBAN == {pban} and YRCONCN == {YRCONCN}') 
+        Edi = microdatasi.query(f'YRCONCN == {YRCONCN}') 
         consumos = []
         total_consumo = (Edi[usos] * Edi['FINALWT'].values.reshape(-1, 1)).sum()  # Suma de todos los consumos para el año actual
 
@@ -1243,7 +1106,7 @@ elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
 
     # Selección de edificios comerciales por cada zona climática
     for SQFTCM in range(1, 4):
-        Edi = microdatasi.query(f'PBAN == {pban} and SQFTCM == {SQFTCM}')
+        Edi = microdatasi.query(f'SQFTCM == {SQFTCM}')
         consumos = []
         total_consumo = (Edi[usos] * Edi['FINALWT'].values.reshape(-1, 1)).sum()  # Suma de todos los consumos para el tamaño actual
 
@@ -1279,7 +1142,7 @@ elif grafica_idx == "Estructura del consumo por fuentes":
     colores = ['purple', 'yellow', 'brown', 'deepskyblue']
 
     # Selección de edificios comerciales 
-    Edi = microdatasi.query(f'PBAN == {pban}')
+    Edi = microdatasi.copy()
 
     # Cálculo de los consumos totales por uso
     total_consumos = []
@@ -1311,7 +1174,7 @@ elif grafica_idx == "Estructura del consumo por fuentes":
 
 elif grafica_idx == "Distribución del consumo por Usos Finales y Tipo de Energía":
     # Selección de edificios comerciales 
-    Edi = microdatasi.query(f'PBAN == {pban}')
+    Edi = microdatasi.copy()
 
     # Definir los tipos de energía y sus columnas correspondientes
     tipos_energia = {
@@ -1421,7 +1284,7 @@ elif grafica_idx == "Consumo de Energía por Clima y Tipo de Energía":
     colores = ['purple', 'gold', 'brown', 'deepskyblue']
 
     for clima in climas:
-        EdiClima = microdatasi.query(f'PUBCLIM=={clima} and PBAN == {pban}')
+        EdiClima = microdatasi.query(f'PUBCLIM=={clima}')
 
         for idx, energia in enumerate(energias):
             consumo = (EdiClima[energia] * EdiClima['FINALWT']).sum()
@@ -1489,7 +1352,7 @@ elif grafica_idx == "Consumo de Energía por Tamaño y Tipo de Energía":
     colores = ['purple', 'gold', 'brown', 'deepskyblue']
 
     for tamano in tamanos:
-        EdiTamano = microdatasi.query(f'SQFTCM=={tamano} and PBAN == {pban}')
+        EdiTamano = microdatasi.query(f'SQFTCM=={tamano}')
 
         for idx, energia in enumerate(energias):
             consumo = (EdiTamano[energia] * EdiTamano['FINALWT']).sum()
@@ -1556,7 +1419,7 @@ elif grafica_idx == "Consumo de Energía por Edad y Tipo de Energía":
     colores = ['purple', 'gold', 'brown', 'deepskyblue']
 
     for edad in edades:
-        EdiEdad = microdatasi.query(f'YRCONCN=={edad} and PBAN == {pban}')
+        EdiEdad = microdatasi.query(f'YRCONCN=={edad}')
 
         for idx, energia in enumerate(energias):
             consumo = (EdiEdad[energia] * EdiEdad['FINALWT']).sum()
