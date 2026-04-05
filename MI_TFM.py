@@ -30,11 +30,7 @@ microdatasi.loc[(microdatasi['YRCONC'] == 6) | (microdatasi['YRCONC'] == 7), 'YR
 microdatasi.loc[microdatasi['YRCONC'] > 7, 'YRCONCN'] = 4
 
 # Convertir la columna 'YRCONCN' a enteros
-# microdatasi['YRCONCN'] = microdatasi['YRCONCN'].astype(int64)
-
-microdatasi['PBAN'] = pd.to_numeric(microdatasi['PBAN'], errors='coerce')
-microdatasi = microdatasi.dropna(subset=['PBAN'])
-microdatasi['PBAN'] = microdatasi['PBAN'].astype(int)
+microdatasi['YRCONCN'] = microdatasi['YRCONCN'].astype(int)
 
 # Reemplazos en la columna PBAPLUS
 cambios = {
@@ -66,7 +62,7 @@ microdatasi.loc[microdatasi['PBAPLUS'].isin([8, 49]), 'PBAN'] = 11  # Otros
 
 # Verificar valores de NaN en PBAN y reemplazarlos
 microdatasi['PBAN'].fillna(99, inplace=True)  # Asignar un valor específico para casos sin asignación
-microdatasi['PBAN'] = microdatasi['PBAN'].astype(int)
+microdatasi['PBAN'] = microdatasi['PBAN'].astype(int64)
 
 # Sumar categorías de calefacción y aire acondicionado
 microdatasi['CLIMAF'] = microdatasi['MFHTBTU'] + microdatasi['MFCLBTU'] + microdatasi['MFVNBTU']
