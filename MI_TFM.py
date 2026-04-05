@@ -30,7 +30,11 @@ microdatasi.loc[(microdatasi['YRCONC'] == 6) | (microdatasi['YRCONC'] == 7), 'YR
 microdatasi.loc[microdatasi['YRCONC'] > 7, 'YRCONCN'] = 4
 
 # Convertir la columna 'YRCONCN' a enteros
-microdatasi['YRCONCN'] = microdatasi['YRCONCN'].astype(int64)
+# microdatasi['YRCONCN'] = microdatasi['YRCONCN'].astype(int64)
+
+microdatasi['PBAN'] = pd.to_numeric(microdatasi['PBAN'], errors='coerce')
+microdatasi = microdatasi.dropna(subset=['PBAN'])
+microdatasi['PBAN'] = microdatasi['PBAN'].astype(int)
 
 # Reemplazos en la columna PBAPLUS
 cambios = {
