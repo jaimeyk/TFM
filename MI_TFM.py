@@ -61,8 +61,12 @@ microdatasi.loc[microdatasi['PBAPLUS'].isin([42, 50]), 'PBAN'] = 10  # Comercio
 microdatasi.loc[microdatasi['PBAPLUS'].isin([8, 49]), 'PBAN'] = 11  # Otros
 
 # Verificar valores de NaN en PBAN y reemplazarlos
-microdatasi['PBAN'].fillna(99, inplace=True)  # Asignar un valor específico para casos sin asignación
-microdatasi['PBAN'] = microdatasi['PBAN'].astype(int64)
+# microdatasi['PBAN'].fillna(99, inplace=True)  # Asignar un valor específico para casos sin asignación
+# microdatasi['PBAN'] = microdatasi['PBAN'].astype(int64)
+
+microdatasi['PBAN'] = pd.to_numeric(microdatasi['PBAN'], errors='coerce')
+microdatasi = microdatasi.dropna(subset=['PBAN'])
+microdatasi['PBAN'] = microdatasi['PBAN'].astype(int)
 
 # Sumar categorías de calefacción y aire acondicionado
 microdatasi['CLIMAF'] = microdatasi['MFHTBTU'] + microdatasi['MFCLBTU'] + microdatasi['MFVNBTU']
