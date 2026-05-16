@@ -81,7 +81,7 @@ tipo_edificio = ["Vacíos", "Oficina", "Almacenes","Alimentación",
 st.title("Datos Energéticos de Edificios")
 
 # PESTAÑAS SUPERIORES - Tipos de edificio
-col1, col2, col3, col4, col5, col6 = st.columns([1.3,1.3,1.3,1.3,1.3,1.3])
+col5, col1, col2, col3, col4, col6 = st.columns([1.3,1.3,1.3,1.3,1.3,1.3])
 
 with col1:
     tipo = st.selectbox("Seleccione tipo de edificio:",
@@ -368,26 +368,27 @@ elif tipo == "Otros":
         microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
 
 
-clasif_tipo_grafica={"Distribución":[
-            "Distribución de superficie por año de construcción",
+clasif_tipo_grafica={"Stock":[
+            "Distribución de superficie por edad",
+            "Estructura del área por tamaños",
             "Distribución de Superficies por Categoría Climática",
             "Distribución del consumo por tamaño",
             "Distribución del consumo por Usos Finales y Tipo de Energía"],
-        "Estructura":[
-            "Estructura del área por tamaños",
+        "Consumo general":[
             "Estructura del consumo por usos",
-            "Estructura del consumo por fuentes"],
-        "Análisis": [
+            "Estructura del consumo por fuentes",
+            "Distribución del consumo por Usos Finales y Tipo de Energía"],
+        "Consumo por Usos Finales": [
             "Análisis del Consumo por Clima y Usos Finales",
             "Análisis del Consumo por año y Usos Finales",
             "Análisis del Consumo por tamaño y Usos Finales"],
-        "Consumo": [
+        "Consumo por Tipo de Energía": [
             "Consumo de Energía por Clima y Tipo de Energía",
             "Consumo de Energía por Tamaño y Tipo de Energía",
             "Consumo de Energía por Edad y Tipo de Energía"],
-        "Actividad":[]}
+        }
 
-tipo_grafica = ["Distribución", "Estructura", "Análisis", "Consumo", "Actividad"]
+tipo_grafica = ["Stock", "Consumo general", "Consumo por Usos Finales", "Consumo por Tipo de Energía"]
 
 # PESTAÑAS IZQUIERDA - Gráficas según el tipo de edificio seleccionado
 
@@ -400,35 +401,6 @@ with st.sidebar:
         key="grafica_seleccionada"
     )
 graficas = clasif_tipo_grafica[grafica_tipo]
-
-if tamaño is not None and grafica_tipo == "Estructura":
-    graficas = [
-        g for g in graficas
-        if g != "Estructura del área por tamaños"
-    ]
-elif tamaño is not None and grafica_tipo == "Distribución":
-    graficas = [
-        g for g in graficas
-        if g != "Distribución del consumo por tamaño"
-    ]
-elif tamaño is not None and grafica_tipo == "Análisis":
-    graficas = [
-        g for g in graficas
-        if g != "Análisis del Consumo por tamaño y Usos Finales"
-    ]
-
-with st.sidebar:
-    grafica_idx = st.radio("Seleccione la gráfica:", graficas)
-
-st.markdown(
-    f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_tipo} - {tipo}</div>",
-    unsafe_allow_html=True
-)
-st.markdown(
-    f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_idx} - {tipo}</div>",
-    unsafe_allow_html=True
-)
-x = np.arange(1990, 2023)
 
 #FILTRO NUMERO DE PLANTAS
 plantas_edificio = ['1','2','3','4','5','6','7','8','9','10-14','15 o más']
@@ -453,9 +425,17 @@ if clima is not None:
     PUBCLIM1 = clima_edificio_PUBCLIM1[clima_edificio.index(clima)]
     microdatasi = microdatasi[microdatasi["PUBCLIM"]==PUBCLIM1]
 
-    #AQUI ELIMINO LAS GRÁFICAS QUE TIENEN QUE VER CON LOS TAMAÑOS, QUE SE VEN ALTERADAS POR ESTE FILTRO
-    graficas.remove("Distribución de Superficies por Categoría Climática")
-    graficas.remove("Análisis del Consumo por Clima y Usos Finales")
+    if grafica_tipo == "Stock":
+        graficas = [
+            g for g in graficas
+            if g != "Distribución de Superficies por Categoría Climática"
+        ]
+
+    elif grafica_tipo == "Consumo por Usos Finales":
+        graficas = [
+            g for g in graficas
+            if g != "Análisis del Consumo por Clima y Usos Finales"
+        ]
 
 #FILTRO EDAD
 edad_edificio = ['Antes de 1960', '1960-1979', '1980-1999', '2000-2018']
@@ -476,11 +456,17 @@ if edad is not None:
     YRCONC1 = edad_edificio_YRCONC1[edad_edificio.index(edad)]
     microdatasi = microdatasi[microdatasi["YRCONC"]==YRCONC1]
 
-    #AQUI ELIMINO LAS GRÁFICAS QUE TIENEN QUE VER CON LOS TAMAÑOS, QUE SE VEN ALTERADAS POR ESTE FILTRO
-    graficas.remove("Distribución de superficie por año de construcción")
-    graficas.remove("Análisis del Consumo por año y Usos Finales")
+    if grafica_tipo == "Stock":
+        graficas = [
+            g for g in graficas
+            if g != "Distribución de superficie por edad"
+        ]
 
-    st.markdown("---")
+    elif grafica_tipo == "Consumo por Usos Finales":
+        graficas = [
+            g for g in graficas
+            if g != "Análisis del Consumo por año y Usos Finales"
+        ]
 
 
 #AQUÍ VOY A DESARROLLAR CADA TIPOLOGÍA, DETALLANDO LAS DISTINTAS GRÁFICAS, SUS NOMBRES Y LOS TAMAÑOS (m2) DE CADA TIPO
@@ -612,6 +598,39 @@ elif tipo == "Otros":
     nombres = ['XS <= 1000', 'S 1000 - 2500', 'M 2500 - 5000', 'L 5000 - 20000', 'XL >= 20000']
     nombres_simples = ['XS', 'S', 'M', 'L', 'XL']
 
+#FILTRO TAMAÑO
+if tamaño is not None and grafica_tipo == "Consumo general":
+    graficas = [
+        g for g in graficas
+        if g != "Estructura del área por tamaños"
+    ]
+elif tamaño is not None and grafica_tipo == "Stock":
+    graficas = [
+        g for g in graficas
+        if g != "Distribución del consumo por tamaño"
+    ]
+elif tamaño is not None and grafica_tipo == "Consumo por Usos Finales":
+    graficas = [
+        g for g in graficas
+        if g != "Análisis del Consumo por tamaño y Usos Finales"
+    ]
+
+#ELECCIÓN GRÁFICA
+with st.sidebar:
+    grafica_idx = st.radio("Seleccione la gráfica:", graficas)
+
+st.markdown(
+    f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_tipo} - {tipo}</div>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_idx} - {tipo}</div>",
+    unsafe_allow_html=True
+)
+x = np.arange(1990, 2023)
+
+st.markdown("---")
+
 #AQUI APARECE EL CÓDIGO DE CADA GRÁFICA, QUE VARÍA SEGÚN EL TIPO DE EDIFICIO
 espacio1, contenido, espacio2 = st.columns([1,3,1])
 
@@ -671,7 +690,7 @@ if grafica_idx == "Estructura del área por tamaños":
                 hide_index=True
             )
 
-elif grafica_idx == "Distribución de superficie por año de construcción":
+elif grafica_idx == "Distribución de superficie por edad":
 
     # Función para calcular la superficie total y media por rango de años
     def calcular_superficie(rango_yrconcn, microdatasi):
