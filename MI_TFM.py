@@ -8,91 +8,31 @@ import altair as alt
 
 st.set_page_config(layout="wide")
 
-microdata = pd.read_csv('cbecs2018_final_public.csv')
-microdatasi = microdata.copy()
+# =========================================================
+# CONSTANTES Y CONFIGURACIÓN
+# =========================================================
+DATA_FILE = 'cbecs2018_final_public.csv'
 
-# Conversión de BTU a MJ y pies cuadrados a metros cuadrados
-btucolumns = ['MFBTU', 'ELBTU', 'NGBTU', 'FKBTU','DHBTU', 'MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU','MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU', 'ELHTBTU', 'ELCLBTU', 'ELVNBTU', 'ELWTBTU', 'ELLTBTU',
-              'ELCKBTU', 'ELRFBTU', 'ELOFBTU', 'ELPCBTU', 'ELOTBTU', 'NGHTBTU', 'NGCLBTU', 'NGWTBTU', 'NGCKBTU', 'NGOTBTU', 'FKHTBTU', 'FKCLBTU', 'FKWTBTU', 'FKCKBTU', 'FKOTBTU', 'DHHTBTU', 'DHCLBTU', 'DHWTBTU', 'DHCKBTU', 'DHOTBTU']  
+BTU_COLUMNS = [
+    'MFBTU', 'ELBTU', 'NGBTU', 'FKBTU', 'DHBTU',
+    'MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU',
+    'ELHTBTU', 'ELCLBTU', 'ELVNBTU', 'ELWTBTU', 'ELLTBTU', 'ELCKBTU', 'ELRFBTU', 'ELOFBTU', 'ELPCBTU', 'ELOTBTU',
+    'NGHTBTU', 'NGCLBTU', 'NGWTBTU', 'NGCKBTU', 'NGOTBTU',
+    'FKHTBTU', 'FKCLBTU', 'FKWTBTU', 'FKCKBTU', 'FKOTBTU',
+    'DHHTBTU', 'DHCLBTU', 'DHWTBTU', 'DHCKBTU', 'DHOTBTU'
+]
 
-btu2kWh = 1.055060/3600  # Conversión de miles de BTU a MJ
-kWh2Mtoe = 8.6e-8
-btu2Mtoe = btu2kWh*kWh2Mtoe #2.52e-11
-sq2m = 0.092903  # Conversión de pies cuadrados a metros cuadrados
+BTU_TO_KWH = 1.055060 / 3600
+KWH_TO_MTOE = 8.6e-8
+BTU_TO_MTOE = BTU_TO_KWH * KWH_TO_MTOE
+SQFT_TO_M2 = 0.092903
 
-microdatasi[btucolumns] *= btu2Mtoe
-microdatasi['SQFT'] *= sq2m
+TIPOS_EDIFICIO = [
+    "Vacíos", "Oficina", "Almacenes", "Alimentación", "Edificio público",
+    "Sanitario", "Educación", "Alojamiento", "Comercio", "Servicios", "Otros"
+]
 
-# Crear categorías por año de construcción
-microdatasi.loc[(microdatasi['YRCONC'] == 2) | (microdatasi['YRCONC'] == 3), 'YRCONCN'] = 1
-microdatasi.loc[(microdatasi['YRCONC'] == 4) | (microdatasi['YRCONC'] == 5), 'YRCONCN'] = 2
-microdatasi.loc[(microdatasi['YRCONC'] == 6) | (microdatasi['YRCONC'] == 7), 'YRCONCN'] = 3
-microdatasi.loc[microdatasi['YRCONC'] > 7, 'YRCONCN'] = 4
-
-# Convertir la columna 'YRCONCN' a enteros
-microdatasi['YRCONCN'] = microdatasi['YRCONCN'].astype(int)
-
-# Reemplazos en la columna PBAPLUS
-cambios = {
-    3: 2, 4: 2, 5: 2, 6: 2, 7: 2,  # Oficinas
-    43: 42, 51: 50,  # Comercios
-    23: 22, 24: 22, 25: 22, 26: 22,  # Edificios públicos
-    17: 16, 52: 16,  # Orden público
-    14: 12, 15: 12,  # Tiendas/Venta de alimentos
-    33: 32, 34: 32,  # Restaurantes
-    46: 44, 47: 44, 48: 44,  # Servicios
-    19: 18  # Ambulatorios
-}
-
-# Aplicar los cambios a PBAPLUS
-microdatasi['PBAPLUS'] = microdatasi['PBAPLUS'].replace(cambios)
-
-# Aplicar las reglas de clasificación a la columna PBAN
-microdatasi.loc[microdatasi['PBAPLUS'] == 1, 'PBAN'] = 1  # Vacíos
-microdatasi.loc[microdatasi['PBAPLUS'] == 2, 'PBAN'] = 2  # Oficinas
-microdatasi.loc[microdatasi['PBAPLUS'].isin([9, 10, 11, 20]), 'PBAN'] = 3  # Almacenes
-microdatasi.loc[microdatasi['PBAPLUS'].isin([12, 32]), 'PBAN'] = 4  # Alimentación
-microdatasi.loc[microdatasi['PBAPLUS'] == 44, 'PBAN'] = 5  # Servicios
-microdatasi.loc[microdatasi['PBAPLUS'].isin([18, 35]), 'PBAN'] = 6  # Servicios sanitarios
-microdatasi.loc[microdatasi['PBAPLUS'].isin([22, 21, 16]), 'PBAN'] = 7  # Edificios públicos
-microdatasi.loc[microdatasi['PBAPLUS'].isin([27, 28, 29, 30, 54]), 'PBAN'] = 8  # Educación
-microdatasi.loc[microdatasi['PBAPLUS'].isin([36, 37, 38, 39, 40]), 'PBAN'] = 9  # Alojamiento
-microdatasi.loc[microdatasi['PBAPLUS'].isin([42, 50]), 'PBAN'] = 10  # Comercio
-microdatasi.loc[microdatasi['PBAPLUS'].isin([8, 49]), 'PBAN'] = 11  # Otros
-
-# Verificar valores de NaN en PBAN y reemplazarlos
-# microdatasi['PBAN'].fillna(99, inplace=True)  # Asignar un valor específico para casos sin asignación
-# microdatasi['PBAN'] = microdatasi['PBAN'].astype(int64)
-
-microdatasi['PBAN'] = pd.to_numeric(microdatasi['PBAN'], errors='coerce')
-microdatasi = microdatasi.dropna(subset=['PBAN'])
-microdatasi['PBAN'] = microdatasi['PBAN'].astype(int)
-
-# Sumar categorías de calefacción y aire acondicionado
-microdatasi['CLIMAF'] = microdatasi['MFHTBTU'] + microdatasi['MFCLBTU'] + microdatasi['MFVNBTU']
-microdatasi['CLIMAE'] = microdatasi['ELHTBTU'] + microdatasi['ELCLBTU'] + microdatasi['ELVNBTU']
-
- # Definir tipos de edificios
-tipo_edificio = ["Vacíos", "Oficina", "Almacenes","Alimentación", 
-                 "Edificio público", "Sanitario", "Educación", 
-                 "Alojamiento","Comercio", "Servicios", "Otros"]
-
-
-st.title("Datos Energéticos de Edificios")
-
-# PESTAÑAS SUPERIORES - Tipos de edificio
-col5, col1, col2, col3, col4, col6 = st.columns([1.3,1.3,1.3,1.3,1.3,1.3])
-
-with col1:
-    tipo = st.selectbox("Seleccione tipo de edificio:",
-        tipo_edificio,
-        key="tipo_edificio",
-        format_func=lambda x: f"🏢 {x}"
-    )
-
-st.markdown("---")
-
-tipo_edificio_PBAN = {
+TIPO_EDIFICIO_PBAN = {
     "Vacíos": 1,
     "Oficina": 2,
     "Almacenes": 3,
@@ -103,27 +43,21 @@ tipo_edificio_PBAN = {
     "Educación": 8,
     "Alojamiento": 9,
     "Comercio": 10,
-    "Otros": 11
+    "Otros": 11,
 }
 
-# FILTRO TIPO
-PBAN_tipo = tipo_edificio_PBAN[tipo]
-microdatasi = microdatasi[microdatasi["PBAN"] == PBAN_tipo]
+CAMBIOS_PBAPLUS = {
+    3: 2, 4: 2, 5: 2, 6: 2, 7: 2,
+    43: 42, 51: 50,
+    23: 22, 24: 22, 25: 22, 26: 22,
+    17: 16, 52: 16,
+    14: 12, 15: 12,
+    33: 32, 34: 32,
+    46: 44, 47: 44, 48: 44,
+    19: 18,
+}
 
-#FILTRO SUBTIPO
-# subtipo_prueba = [[None],
-#                     ['Oficina'],
-#                     ['Centro de distribución','Almacén sin refrigeración','Alquiler de almacenes públicos','Almacén con refrigeración'],
-#                     ['Venta de alimentos','Restauración'],
-#                     ['Orden público','Religión','Servicio público'],
-#                     ['Hospital','Ambulatorio'],
-#                     ['Infantil/Guardería','Escuela primaria','Escuela secundaria','Bachillerato','Universidad'],
-#                     ['Residencia de ancianos','Residencia universitaria','Hotel','Motel/B&B','Otro hospedaje'],
-#                     ['Centro comercial','Tiendas'],
-#                     ['Servicios'], 
-#                     ['Laboratorio']]
-
-subtipos_por_tipo = {
+SUBTIPOS_POR_TIPO = {
     "Vacíos": [None],
     "Oficina": ['Oficina'],
     "Almacenes": ['Centro de distribución', 'Almacén sin refrigeración', 'Alquiler de almacenes públicos', 'Almacén con refrigeración'],
@@ -134,722 +68,709 @@ subtipos_por_tipo = {
     "Alojamiento": ['Residencia de ancianos', 'Residencia universitaria', 'Hotel', 'Motel/B&B', 'Otro hospedaje'],
     "Comercio": ['Centro comercial', 'Tiendas'],
     "Servicios": ['Servicios'],
-    "Otros": ['Laboratorio']
+    "Otros": ['Laboratorio'],
 }
 
-subtipo_edificio_PBAPLUS = {
-  'Oficina': [2, 3, 4, 5, 6, 7],
-  'Laboratorio': [8],
-  'Centro de distribución': [9],
-  'Almacén sin refrigeración': [10],
-  'Alquiler de almacenes públicos': [11],
-  'Almacén con refrigeración': [20],
-  'Venta de alimentos': [12, 14, 15],
-  'Restauración': [32, 33, 34],
-  'Orden público': [16, 17, 52],
-  'Religión': [21],
-  'Servicio público': [22, 23, 24, 25, 26],
-  'Hospital': [35],
-  'Ambulatorio': [18, 19],
-  'Infantil/Guardería': [30],
-  'Escuela primaria': [28],
-  'Escuela secundaria': [54],
-  'Bachillerato': [29],
-  'Universidad': [27],
-  'Residencia de ancianos': [36],
-  'Residencia universitaria': [37],
-  'Hotel': [38],
-  'Motel/B&B': [39],
-  'Otro hospedaje': [40],
-  'Centro comercial': [50, 51],
-  'Tiendas': [42, 43],
-  'Servicios': [44, 46, 47, 48],
-  'Otros': [49]
+SUBTIPO_EDIFICIO_PBAPLUS = {
+    'Oficina': [2, 3, 4, 5, 6, 7],
+    'Laboratorio': [8],
+    'Centro de distribución': [9],
+    'Almacén sin refrigeración': [10],
+    'Alquiler de almacenes públicos': [11],
+    'Almacén con refrigeración': [20],
+    'Venta de alimentos': [12, 14, 15],
+    'Restauración': [32, 33, 34],
+    'Orden público': [16, 17, 52],
+    'Religión': [21],
+    'Servicio público': [22, 23, 24, 25, 26],
+    'Hospital': [35],
+    'Ambulatorio': [18, 19],
+    'Infantil/Guardería': [30],
+    'Escuela primaria': [28],
+    'Escuela secundaria': [54],
+    'Bachillerato': [29],
+    'Universidad': [27],
+    'Residencia de ancianos': [36],
+    'Residencia universitaria': [37],
+    'Hotel': [38],
+    'Motel/B&B': [39],
+    'Otro hospedaje': [40],
+    'Centro comercial': [50, 51],
+    'Tiendas': [42, 43],
+    'Servicios': [44, 46, 47, 48],
+    'Otros': [49],
 }
 
-    # Seleccionar subtipo
+SIZE_CONFIG = {
+    "Alojamiento": {
+        "labels": ['S', 'M', 'L'],
+        "limits": [(-np.inf, 10000, 1), (10000, 20000, 2), (20000, np.inf, 3)],
+    },
+    "Oficina": {
+        "labels": ['XS', 'S', 'M', 'L', 'XL'],
+        "limits": [(-np.inf, 500, 1), (500, 5000, 2), (5000, 15000, 3), (15000, 30000, 4), (30000, np.inf, 5)],
+    },
+    "Almacenes": {
+        "labels": ['S', 'M', 'L'],
+        "limits": [(-np.inf, 2500, 1), (2500, 15000, 2), (15000, np.inf, 3)],
+    },
+    "Educación": {
+        "labels": ['XS', 'S', 'M', 'L'],
+        "limits": [(-np.inf, 5000, 1), (5000, 10000, 2), (10000, 20000, 3), (20000, np.inf, 4)],
+    },
+    "Alimentación": {
+        "labels": ['S', 'M', 'L'],
+        "limits": [(-np.inf, 250, 1), (250, 500, 2), (500, np.inf, 3)],
+    },
+    "Edificio público": {
+        "labels": ['S', 'M', 'L'],
+        "limits": [(-np.inf, 1000, 1), (1000, 5000, 2), (5000, np.inf, 3)],
+    },
+    "Sanitario": {
+        "labels": ['S', 'M', 'L'],
+        "limits": [(-np.inf, 10000, 1), (10000, 30000, 2), (30000, np.inf, 3)],
+    },
+    "Servicios": {
+        "labels": ['S', 'M', 'L'],
+        "limits": [(-np.inf, 500, 1), (500, 2000, 2), (2000, np.inf, 3)],
+    },
+    "Comercio": {
+        "labels": ['XS', 'S', 'M', 'L'],
+        "limits": [(-np.inf, 2000, 1), (2000, 5000, 2), (5000, 15000, 3), (15000, np.inf, 4)],
+    },
+    "Vacíos": {
+        "labels": ['XS', 'S', 'M', 'L'],
+        "limits": [(-np.inf, 500, 1), (500, 5000, 2), (5000, 10000, 3), (10000, np.inf, 4)],
+    },
+    "Otros": {
+        "labels": ['XS', 'S', 'M', 'L', 'XL'],
+        "limits": [(-np.inf, 1000, 1), (1000, 2500, 2), (2500, 5000, 3), (5000, 20000, 4), (20000, np.inf, 5)],
+    },
+}
+
+CLASIF_TIPO_GRAFICA = {
+    "Stock": [
+        "Distribución de Superficies por Categoría Climática",
+        "Estructura del área por tamaños",
+        "Distribución de superficie por edad",
+    ],
+    "Consumo": [
+        "Distribución del consumo por tamaño",
+        "Estructura del consumo por usos",
+        "Estructura del consumo por fuentes",
+        "Distribución del consumo por Usos Finales y Tipo de Energía",
+    ],
+    "Consumo por Usos Finales": [
+        "Análisis del Consumo por Clima y Usos Finales",
+        "Análisis del Consumo por tamaño y Usos Finales",
+        "Análisis del Consumo por Edad y Usos Finales",
+    ],
+    "Consumo por Tipo de Energía": [
+        "Consumo de Energía por Clima y Tipo de Energía",
+        "Consumo de Energía por Tamaño y Tipo de Energía",
+        "Consumo de Energía por Edad y Tipo de Energía",
+    ],
+}
+
+TIPOS_GRAFICA = list(CLASIF_TIPO_GRAFICA.keys())
+BOTONES = ["Indicadores Clave"] + TIPOS_GRAFICA
+CLIMA_EDIFICIO = ['Frío o muy frío', 'Frío', 'Templado', 'Cálido', 'Muy cálido']
+CLIMA_EDIFICIO_PUBCLIM1 = [1, 2, 3, 4, 5]
+EDAD_EDIFICIO = ['Antes de 1960', '1960-1979', '1980-1999', '2000-2018']
+EDAD_EDIFICIO_YRCONC1 = [1, 2, 3, 4]
+
+# =========================================================
+# FUNCIONES DE PREPARACIÓN Y FILTROS
+# =========================================================
+def load_and_prepare_data(path: str) -> pd.DataFrame:
+    """Carga el CSV y aplica las mismas transformaciones iniciales del código original."""
+    df = pd.read_csv(path).copy()
+
+    df[BTU_COLUMNS] *= BTU_TO_MTOE
+    df['SQFT'] *= SQFT_TO_M2
+
+    df.loc[(df['YRCONC'] == 2) | (df['YRCONC'] == 3), 'YRCONCN'] = 1
+    df.loc[(df['YRCONC'] == 4) | (df['YRCONC'] == 5), 'YRCONCN'] = 2
+    df.loc[(df['YRCONC'] == 6) | (df['YRCONC'] == 7), 'YRCONCN'] = 3
+    df.loc[df['YRCONC'] > 7, 'YRCONCN'] = 4
+    df['YRCONCN'] = df['YRCONCN'].astype(int)
+
+    df['PBAPLUS'] = df['PBAPLUS'].replace(CAMBIOS_PBAPLUS)
+
+    df.loc[df['PBAPLUS'] == 1, 'PBAN'] = 1
+    df.loc[df['PBAPLUS'] == 2, 'PBAN'] = 2
+    df.loc[df['PBAPLUS'].isin([9, 10, 11, 20]), 'PBAN'] = 3
+    df.loc[df['PBAPLUS'].isin([12, 32]), 'PBAN'] = 4
+    df.loc[df['PBAPLUS'] == 44, 'PBAN'] = 5
+    df.loc[df['PBAPLUS'].isin([18, 35]), 'PBAN'] = 6
+    df.loc[df['PBAPLUS'].isin([22, 21, 16]), 'PBAN'] = 7
+    df.loc[df['PBAPLUS'].isin([27, 28, 29, 30, 54]), 'PBAN'] = 8
+    df.loc[df['PBAPLUS'].isin([36, 37, 38, 39, 40]), 'PBAN'] = 9
+    df.loc[df['PBAPLUS'].isin([42, 50]), 'PBAN'] = 10
+    df.loc[df['PBAPLUS'].isin([8, 49]), 'PBAN'] = 11
+
+    df['PBAN'] = pd.to_numeric(df['PBAN'], errors='coerce')
+    df = df.dropna(subset=['PBAN'])
+    df['PBAN'] = df['PBAN'].astype(int)
+
+    df['CLIMAF'] = df['MFHTBTU'] + df['MFCLBTU'] + df['MFVNBTU']
+    df['CLIMAE'] = df['ELHTBTU'] + df['ELCLBTU'] + df['ELVNBTU']
+
+    return df
+
+
+def classify_size(df: pd.DataFrame, tipo: str) -> pd.DataFrame:
+    """Crea SQFTCM según el tipo de edificio, con los mismos cortes del código original."""
+    df = df.copy()
+    df['SQFTCM'] = np.nan
+
+    if tipo == "Alojamiento":
+        df.loc[df['SQFT'] < 10000, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] >= 10000) & (df['SQFT'] < 20000), 'SQFTCM'] = 2
+        df.loc[df['SQFT'] >= 20000, 'SQFTCM'] = 3
+
+    elif tipo == "Oficina":
+        df.loc[df['SQFT'] <= 500, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 500) & (df['SQFT'] <= 5000), 'SQFTCM'] = 2
+        df.loc[(df['SQFT'] > 5000) & (df['SQFT'] <= 15000), 'SQFTCM'] = 3
+        df.loc[(df['SQFT'] > 15000) & (df['SQFT'] < 30000), 'SQFTCM'] = 4
+        df.loc[df['SQFT'] >= 30000, 'SQFTCM'] = 5
+
+    elif tipo == "Almacenes":
+        df.loc[df['SQFT'] <= 2500, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 2500) & (df['SQFT'] < 15000), 'SQFTCM'] = 2
+        df.loc[df['SQFT'] >= 15000, 'SQFTCM'] = 3
+
+    elif tipo == "Educación":
+        df.loc[df['SQFT'] <= 5000, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 5000) & (df['SQFT'] <= 10000), 'SQFTCM'] = 2
+        df.loc[(df['SQFT'] > 10000) & (df['SQFT'] < 20000), 'SQFTCM'] = 3
+        df.loc[df['SQFT'] >= 20000, 'SQFTCM'] = 4
+
+    elif tipo == "Alimentación":
+        df.loc[df['SQFT'] <= 250, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 250) & (df['SQFT'] < 500), 'SQFTCM'] = 2
+        df.loc[df['SQFT'] >= 500, 'SQFTCM'] = 3
+
+    elif tipo == "Edificio público":
+        df.loc[df['SQFT'] <= 1000, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 1000) & (df['SQFT'] < 5000), 'SQFTCM'] = 2
+        df.loc[df['SQFT'] >= 5000, 'SQFTCM'] = 3
+
+    elif tipo == "Sanitario":
+        df.loc[df['SQFT'] <= 10000, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 10000) & (df['SQFT'] < 30000), 'SQFTCM'] = 2
+        df.loc[df['SQFT'] >= 30000, 'SQFTCM'] = 3
+
+    elif tipo == "Servicios":
+        df.loc[df['SQFT'] <= 500, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 500) & (df['SQFT'] < 2000), 'SQFTCM'] = 2
+        df.loc[df['SQFT'] >= 2000, 'SQFTCM'] = 3
+
+    elif tipo == "Comercio":
+        df.loc[df['SQFT'] <= 2000, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 2000) & (df['SQFT'] <= 5000), 'SQFTCM'] = 2
+        df.loc[(df['SQFT'] > 5000) & (df['SQFT'] < 15000), 'SQFTCM'] = 3
+        df.loc[df['SQFT'] >= 15000, 'SQFTCM'] = 4
+
+    elif tipo == "Vacíos":
+        df.loc[df['SQFT'] <= 500, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 500) & (df['SQFT'] <= 5000), 'SQFTCM'] = 2
+        df.loc[(df['SQFT'] > 5000) & (df['SQFT'] < 10000), 'SQFTCM'] = 3
+        df.loc[df['SQFT'] >= 10000, 'SQFTCM'] = 4
+
+    elif tipo == "Otros":
+        df.loc[df['SQFT'] <= 1000, 'SQFTCM'] = 1
+        df.loc[(df['SQFT'] > 1000) & (df['SQFT'] <= 2500), 'SQFTCM'] = 2
+        df.loc[(df['SQFT'] > 2500) & (df['SQFT'] <= 5000), 'SQFTCM'] = 3
+        df.loc[(df['SQFT'] > 5000) & (df['SQFT'] < 20000), 'SQFTCM'] = 4
+        df.loc[df['SQFT'] >= 20000, 'SQFTCM'] = 5
+
+    df['SQFTCM'] = df['SQFTCM'].fillna(0).astype(int)
+    return df
+
+def filter_by_subtype(df: pd.DataFrame, subtipo: str | None) -> pd.DataFrame:
+    if subtipo is None:
+        return df
+
+    pbaplus_values = SUBTIPO_EDIFICIO_PBAPLUS.get(subtipo.strip(), [])
+    if not pbaplus_values:
+        return df
+
+    return df[df['PBAPLUS'].isin(pbaplus_values)]
+
+
+def recode_age_filter_column(df: pd.DataFrame) -> pd.DataFrame:
+    """Reproduce la recodificación de YRCONC usada para el filtro de edad."""
+    df = df.copy()
+    df.loc[(df['YRCONC'] == 2) | (df['YRCONC'] == 3), 'YRCONC'] = 1
+    df.loc[(df['YRCONC'] == 4) | (df['YRCONC'] == 5), 'YRCONC'] = 2
+    df.loc[(df['YRCONC'] == 6) | (df['YRCONC'] == 7), 'YRCONC'] = 3
+    df.loc[df['YRCONC'] > 7, 'YRCONC'] = 4
+    df['YRCONC'] = df['YRCONC'].fillna(0).astype(int)
+    return df
+
+
+def remove_graph_option(graficas: list[str], opcion: str) -> list[str]:
+    return [grafica for grafica in graficas if grafica != opcion]
+
+
+def stop_if_empty(df: pd.DataFrame) -> None:
+    """Detiene la app si no quedan edificios tras aplicar los filtros."""
+    if df.empty:
+        st.warning("No existe ningún edificio que cumpla con esas características.")
+        st.stop()
+
+
+def add_percentage_column(df: pd.DataFrame, value_col: str) -> pd.DataFrame:
+    """Añade una columna de porcentaje sobre el total de value_col."""
+    df = df.copy()
+    total = df[value_col].sum()
+    if total > 0:
+        df["Porcentaje (%)"] = df[value_col] / total * 100
+    else:
+        df["Porcentaje (%)"] = 0
+    return df
+
+
+def render_horizontal_percentage_bar(
+    df: pd.DataFrame,
+    category_col: str,
+    value_col: str,
+    xaxis_title: str,
+    hover_category_name: str,
+) -> None:
+    """Representa una gráfica de barras horizontales en Plotly con el estilo común elegido."""
+    df_plot = add_percentage_column(df, value_col)
+    df_plot = df_plot[df_plot[value_col] > 0]
+
+    if df_plot.empty:
+        st.warning("No hay datos suficientes para generar esta gráfica.")
+        st.stop()
+
+    fig_bar = px.bar(
+        df_plot,
+        x="Porcentaje (%)",
+        y=category_col,
+        orientation="h",
+        text=df_plot["Porcentaje (%)"].round(1).astype(str) + "%",
+        color=category_col,
+        color_discrete_sequence=px.colors.qualitative.Set1,
+    )
+
+    fig_bar.update_layout(
+        xaxis_title=xaxis_title,
+        yaxis_title="",
+        showlegend=False,
+        margin=dict(t=40, b=20, l=20, r=20),
+    )
+
+    fig_bar.update_traces(
+        hovertemplate=(
+            f"<b>{hover_category_name}: %{{y}}</b><br>"
+            "Porcentaje: %{x:.2f}%<extra></extra>"
+        )
+    )
+
+    with contenido:
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+
+def render_results_table(df: pd.DataFrame, format_dict: dict | None = None) -> None:
+    """Muestra una tabla de resultados debajo de cada gráfica."""
+    with contenido:
+        st.subheader("Tabla Resultados")
+        if format_dict:
+            st.dataframe(
+                df.style.format(format_dict),
+                use_container_width=True,
+                hide_index=True,
+            )
+        else:
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True,
+            )
+
+
+# =========================================================
+# CARGA DE DATOS E INTERFAZ DE FILTROS
+
+microdatasi = load_and_prepare_data(DATA_FILE)
+
+st.title("Datos Energéticos de Edificios")
+
+if "grafica_tipo_superior" not in st.session_state:
+    st.session_state.grafica_tipo_superior = "Indicadores Clave"
+
+cols_botones = st.columns(5)
+
+for i, tipo_grafica in enumerate(BOTONES):
+    with cols_botones[i]:
+        if st.button(tipo_grafica, use_container_width=True):
+            st.session_state.grafica_tipo_superior = tipo_grafica
+
+grafica_tipo = st.session_state.grafica_tipo_superior
+
+if grafica_tipo != "Indicadores Clave":
+    graficas = CLASIF_TIPO_GRAFICA[grafica_tipo].copy()
+else:
+    graficas = []
+
+st.markdown("---")
+
+col1, col2, col5, col3, col6 = st.columns([1.3, 1.3, 1.3, 1.3, 1.3])
+
+with col1:
+    tipo = st.selectbox(
+        "Tipo de edificio:",
+        TIPOS_EDIFICIO,
+        key="tipo_edificio",
+        format_func=lambda x: f"{x}",
+    )
+
+st.markdown("---")
+
+# Filtro por tipo
+microdatasi = microdatasi[microdatasi['PBAN'] == TIPO_EDIFICIO_PBAN[tipo]]
+stop_if_empty(microdatasi)
+
+# Filtro por subtipo
 with col2:
-    subtipo = st.selectbox("Seleccione subtipo de edificio:", 
-                           subtipos_por_tipo[tipo],
-                           index=None, placeholder="Todos")
+    subtipo = st.selectbox(
+        "Subtipo de edificio:",
+        SUBTIPOS_POR_TIPO[tipo],
+        index=None,
+        placeholder="Todos",
+    )
 
-if subtipo is not None:
-    PBAPLUS_values = subtipo_edificio_PBAPLUS.get(subtipo.strip(), [])
-    if PBAPLUS_values:
-        microdatasi = microdatasi[microdatasi["PBAPLUS"].isin(PBAPLUS_values)]
+microdatasi = filter_by_subtype(microdatasi, subtipo)
 
-if microdatasi.empty:
-    st.warning("No hay datos disponibles para la combinación de tipo y subtipo seleccionada.")
+stop_if_empty(microdatasi)
+
+# Filtro por tamaño
+microdatasi = classify_size(microdatasi, tipo)
+tamaño_edificio = SIZE_CONFIG[tipo]['labels']
+tamaño_edificio_SQFTC1 = list(range(1, len(tamaño_edificio) + 1))
+
+with col3:
+    tamaño = st.selectbox(
+        "Tamaño del edificio:",
+        tamaño_edificio,
+        index=None,
+        placeholder="Todos",
+    )
+
+if tamaño is not None:
+    SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
+    microdatasi = microdatasi[microdatasi['SQFTCM'] == SQFTC1]
+    stop_if_empty(microdatasi)
+
+    if tamaño is not None and grafica_tipo == "Stock":
+        graficas = remove_graph_option(graficas, "Estructura del área por tamaños")
+    elif tamaño is not None and grafica_tipo == "Consumo":
+        graficas = remove_graph_option(graficas, "Distribución del consumo por tamaño")
+    elif tamaño is not None and grafica_tipo == "Consumo por Usos Finales":
+        graficas = remove_graph_option(graficas, "Análisis del Consumo por tamaño y Usos Finales")
+    elif tamaño is not None and grafica_tipo == "Consumo por Tipo de Energía":
+        graficas = remove_graph_option(graficas, "Consumo de Energía por Tamaño y Tipo de Energía")
+
+# Filtro por clima
+with col5:
+    clima = st.selectbox(
+        "Clima del edificio:",
+        CLIMA_EDIFICIO,
+        index=None,
+        placeholder="Todos",
+    )
+
+if clima is not None:
+    PUBCLIM1 = CLIMA_EDIFICIO_PUBCLIM1[CLIMA_EDIFICIO.index(clima)]
+    microdatasi = microdatasi[microdatasi['PUBCLIM'] == PUBCLIM1]
+    stop_if_empty(microdatasi)
+
+    if grafica_tipo == "Stock":
+        graficas = remove_graph_option(graficas, "Distribución de Superficies por Categoría Climática")
+    elif grafica_tipo == "Consumo por Usos Finales":
+        graficas = remove_graph_option(graficas, "Análisis del Consumo por Clima y Usos Finales")
+    elif grafica_tipo == "Consumo por Tipo de Energía":
+        graficas = remove_graph_option(graficas, "Consumo de Energía por Clima y Tipo de Energía")
+
+# Filtro por edad
+microdatasi = recode_age_filter_column(microdatasi)
+
+with col6:
+    edad = st.selectbox(
+        "Edad del edificio:",
+        EDAD_EDIFICIO,
+        index=None,
+        placeholder="Todos",
+    )
+
+if edad is not None:
+    YRCONC1 = EDAD_EDIFICIO_YRCONC1[EDAD_EDIFICIO.index(edad)]
+    microdatasi = microdatasi[microdatasi['YRCONC'] == YRCONC1]
+    stop_if_empty(microdatasi)
+
+    if grafica_tipo == "Stock":
+        graficas = remove_graph_option(graficas, "Distribución de superficie por edad")
+    elif grafica_tipo == "Consumo por Usos Finales":
+        graficas = remove_graph_option(graficas, "Análisis del Consumo por Edad y Usos Finales")
+    elif grafica_tipo == "Consumo por Tipo de Energía":
+        graficas = remove_graph_option(graficas, "Consumo de Energía por Edad y Tipo de Energía")
+
+if grafica_tipo == "Indicadores Clave":
+
+    if tipo == "Vacíos":
+        Unidad_Servicio = "No aplica"
+    elif tipo == "Oficina":
+        Unidad_Servicio = sum(microdatasi["NWKER"])
+
+    Consumo = sum((microdatasi["MFBTU"]*microdatasi["FINALWT"]) + (microdatasi["ELBTU"]*microdatasi["FINALWT"]))
+
+    df_indicadores = pd.DataFrame([{
+        "Tipo":tipo,
+        "Población [Millones]":"8.3",
+        "Superficie [Mm2]":sum(microdatasi["SQFT"])/1000000,
+        "Número de edificios":sum(microdatasi["FINALWT"]),
+        "Service Unit": Unidad_Servicio,
+        "Consumo": Consumo,
+        }])
+
+    st.subheader("Indicadores Clave")
+    st.dataframe(
+        df_indicadores.style.format({
+        "Superficie [Mm2]": "{:.0f}",
+        "Número de edificios": "{:.0f}",
+        }),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.markdown("---")
+    st.caption("Desarrollado por JYK - Fuente: U.S. Energy Information Administration (eia)")
     st.stop()
 
-#FILTRO TAMAÑO
-    #TENGO QUE RECLASIFICAR ESTE FILTRO SEGÚN EL TIPO DE EDIFICIO...
-if tipo == "Alojamiento":
-    tamaño_edificio = ['S', 'M', 'L']
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] < 10000, 'SQFTCM'] = 1 #S
-    microdatasi.loc[(microdatasi['SQFT'] >= 10000) & (microdatasi['SQFT'] < 20000), 'SQFTCM'] = 2 #M
-    microdatasi.loc[microdatasi['SQFT'] >= 20000, 'SQFTCM'] = 3 #L
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio, index=None
-                                ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-
-elif tipo == "Oficina":
-    tamaño_edificio = ['XS', 'S', 'M', 'L', 'XL']
-    microdatasi.loc[(microdatasi['SQFT']) <= 500, 'SQFTCM'] = 1 #XS
-    microdatasi.loc[((microdatasi['SQFT']) > 500) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 2 #S
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) <= 15000), 'SQFTCM'] = 3 #M
-    microdatasi.loc[((microdatasi['SQFT']) > 15000) & ((microdatasi['SQFT']) < 30000), 'SQFTCM'] = 4 #L
-    microdatasi.loc[(microdatasi['SQFT']) >= 30000, 'SQFTCM'] = 5 #XL
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3, 4, 5]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-        
-elif tipo == "Almacenes":
-    tamaño_edificio = ['S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 2500, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 2500) & ((microdatasi['SQFT']) < 15000), 'SQFTCM'] = 2 
-    microdatasi.loc[(microdatasi['SQFT']) >= 15000, 'SQFTCM'] = 3
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-
-elif tipo == "Educación":
-    tamaño_edificio = ['XS', 'S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 5000, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) <= 10000), 'SQFTCM'] = 2 
-    microdatasi.loc[((microdatasi['SQFT']) > 10000) & ((microdatasi['SQFT']) < 20000), 'SQFTCM'] = 3 
-    microdatasi.loc[(microdatasi['SQFT']) >= 20000, 'SQFTCM'] = 4
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3, 4]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-
-elif tipo == "Alimentación":
-    tamaño_edificio = ['S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 250, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 250) & ((microdatasi['SQFT']) < 500), 'SQFTCM'] = 2 
-    microdatasi.loc[(microdatasi['SQFT']) >= 500, 'SQFTCM'] = 3
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-            
-elif tipo == "Edificio público":
-    tamaño_edificio = ['S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 1000, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 1000) & ((microdatasi['SQFT']) < 5000), 'SQFTCM'] = 2 
-    microdatasi.loc[(microdatasi['SQFT']) >= 5000, 'SQFTCM'] = 3
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-        
-elif tipo == "Sanitario":
-    tamaño_edificio = ['S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 10000, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 10000) & ((microdatasi['SQFT']) < 30000), 'SQFTCM'] = 2 
-    microdatasi.loc[(microdatasi['SQFT']) >= 30000, 'SQFTCM'] = 3
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-        
-elif tipo == "Servicios":
-    tamaño_edificio = ['S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 500, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 500) & ((microdatasi['SQFT']) < 2000), 'SQFTCM'] = 2 
-    microdatasi.loc[(microdatasi['SQFT']) >= 2000, 'SQFTCM'] = 3
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-        
-elif tipo == "Comercio":
-    tamaño_edificio = ['XS', 'S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 2000, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 2000) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 2 
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) < 15000), 'SQFTCM'] = 3 
-    microdatasi.loc[(microdatasi['SQFT']) >= 15000, 'SQFTCM'] = 4
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3, 4]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-
-elif tipo == "Vacíos":
-    tamaño_edificio = ['XS', 'S', 'M', 'L']
-    microdatasi.loc[(microdatasi['SQFT']) <= 500, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 500) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 2 
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) < 10000), 'SQFTCM'] = 3 
-    microdatasi.loc[(microdatasi['SQFT']) >= 10000, 'SQFTCM'] = 4
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3, 4]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-
-elif tipo == "Otros":
-    tamaño_edificio = ['XS', 'S', 'M', 'L', 'XL']
-    microdatasi.loc[(microdatasi['SQFT']) <= 1000, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 1000) & ((microdatasi['SQFT']) <= 2500), 'SQFTCM'] = 2 
-    microdatasi.loc[((microdatasi['SQFT']) > 2500) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 3 
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) < 20000), 'SQFTCM'] = 4
-    microdatasi.loc[(microdatasi['SQFT']) >= 20000, 'SQFTCM'] = 5
-
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].fillna(0).astype(int)
-
-    tamaño_edificio_SQFTC1 = [1, 2, 3, 4, 5]
-    with col3:
-        tamaño = st.selectbox("Seleccione tamaño del edificio:",tamaño_edificio
-                                ,index=None ,placeholder="Todos")
-    if tamaño is not None:
-        SQFTC1 = tamaño_edificio_SQFTC1[tamaño_edificio.index(tamaño)]
-        microdatasi = microdatasi[microdatasi["SQFTCM"] == SQFTC1]
-
-
-clasif_tipo_grafica={"Stock":[
-            "Distribución de superficie por edad",
-            "Estructura del área por tamaños",
-            "Distribución de Superficies por Categoría Climática",
-            "Distribución del consumo por tamaño",
-            "Distribución del consumo por Usos Finales y Tipo de Energía"],
-        "Consumo general":[
-            "Estructura del consumo por usos",
-            "Estructura del consumo por fuentes",
-            "Distribución del consumo por Usos Finales y Tipo de Energía"],
-        "Consumo por Usos Finales": [
-            "Análisis del Consumo por Clima y Usos Finales",
-            "Análisis del Consumo por año y Usos Finales",
-            "Análisis del Consumo por tamaño y Usos Finales"],
-        "Consumo por Tipo de Energía": [
-            "Consumo de Energía por Clima y Tipo de Energía",
-            "Consumo de Energía por Tamaño y Tipo de Energía",
-            "Consumo de Energía por Edad y Tipo de Energía"],
-        }
-
-tipo_grafica = ["Stock", "Consumo general", "Consumo por Usos Finales", "Consumo por Tipo de Energía"]
-
-# PESTAÑAS IZQUIERDA - Gráficas según el tipo de edificio seleccionado
-
+# Elección de gráfica concreta
 with st.sidebar:
-    st.subheader("Gráficas disponibles")
-    #grafica_idx=st.radio
-    grafica_tipo = st.selectbox(
-        "Seleccione tipo de gráfica:",
-        tipo_grafica,
-        key="grafica_seleccionada"
-    )
-graficas = clasif_tipo_grafica[grafica_tipo]
-
-#FILTRO NUMERO DE PLANTAS
-plantas_edificio = ['1','2','3','4','5','6','7','8','9','10-14','15 o más']
-
-plantas_edificio_NFLOOR1 = [1,2,3,4,5,6,7,8,9,994,995]
-with col4:
-    plantas = st.selectbox("Seleccione las plantas del edificio:",plantas_edificio,
-                                index=None, placeholder="Todos") 
-
-if plantas is not None:
-    NFLOOR1 = plantas_edificio_NFLOOR1[plantas_edificio.index(plantas)]
-    microdatasi = microdatasi[microdatasi["NFLOOR"] == NFLOOR1]
-
-#FILTRO CLIMA
-clima_edificio = ['Frío o muy frío','Frío','Templado','Cálido','Muy cálido']
-
-clima_edificio_PUBCLIM1 = [1,2,3,4,5]
-with col5:
-    clima = st.selectbox("Seleccione el clima del edificio:",clima_edificio,index=None, placeholder="Todos")
-    
-if clima is not None:
-    PUBCLIM1 = clima_edificio_PUBCLIM1[clima_edificio.index(clima)]
-    microdatasi = microdatasi[microdatasi["PUBCLIM"]==PUBCLIM1]
-
-    if grafica_tipo == "Stock":
-        graficas = [
-            g for g in graficas
-            if g != "Distribución de Superficies por Categoría Climática"
-        ]
-
-    elif grafica_tipo == "Consumo por Usos Finales":
-        graficas = [
-            g for g in graficas
-            if g != "Análisis del Consumo por Clima y Usos Finales"
-        ]
-
-#FILTRO EDAD
-edad_edificio = ['Antes de 1960', '1960-1979', '1980-1999', '2000-2018']
-
-microdatasi.loc[(microdatasi['YRCONC'] == 2) | (microdatasi['YRCONC'] == 3), 'YRCONC'] = 1 #Antes de 1960
-microdatasi.loc[(microdatasi['YRCONC'] == 4) | (microdatasi['YRCONC'] == 5), 'YRCONC'] = 2 #1960-1979
-microdatasi.loc[(microdatasi['YRCONC'] == 6) | (microdatasi['YRCONC'] == 7), 'YRCONC'] = 3 #1980-1999
-microdatasi.loc[microdatasi['YRCONC'] > 7, 'YRCONC'] = 4 #2000-2018
-
-microdatasi['YRCONC'] = microdatasi['YRCONC'].fillna(0).astype(int)
-
-edad_edificio_YRCONC1 = [1, 2, 3, 4]
-with col6:
-    edad = st.selectbox("Seleccione la edad del edificio:",edad_edificio,
-                         index=None, placeholder="Todos")
-    
-if edad is not None:    
-    YRCONC1 = edad_edificio_YRCONC1[edad_edificio.index(edad)]
-    microdatasi = microdatasi[microdatasi["YRCONC"]==YRCONC1]
-
-    if grafica_tipo == "Stock":
-        graficas = [
-            g for g in graficas
-            if g != "Distribución de superficie por edad"
-        ]
-
-    elif grafica_tipo == "Consumo por Usos Finales":
-        graficas = [
-            g for g in graficas
-            if g != "Análisis del Consumo por año y Usos Finales"
-        ]
-
-
-#AQUÍ VOY A DESARROLLAR CADA TIPOLOGÍA, DETALLANDO LAS DISTINTAS GRÁFICAS, SUS NOMBRES Y LOS TAMAÑOS (m2) DE CADA TIPO
-if tipo == "Alojamiento":
-    # pban = 9
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 10000, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 10000) & (microdatasi['SQFT'] < 20000), 'SQFTCM'] = 2
-    microdatasi.loc[microdatasi['SQFT'] >= 20000, 'SQFTCM'] = 3
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['S <= 10000', 'M 10000 - 20000', 'L >= 20000']
-    nombres_simples = ['S', 'M', 'L']
-
-elif tipo == "Almacenes":
-    pban = 3
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 2500, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 2500) & (microdatasi['SQFT'] < 15000), 'SQFTCM'] = 2
-    microdatasi.loc[microdatasi['SQFT'] >= 15000, 'SQFTCM'] = 3
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['S <= 2500', 'M 2500 - 15000', 'L >= 15000']
-    nombres_simples = ['S', 'M', 'L']
-
-elif tipo == "Educación":
-    # pban = 8
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 5000, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 5000) & (microdatasi['SQFT'] <= 10000), 'SQFTCM'] = 2
-    microdatasi.loc[(microdatasi['SQFT'] >= 10000) & (microdatasi['SQFT'] < 20000), 'SQFTCM'] = 3
-    microdatasi.loc[microdatasi['SQFT'] >= 20000, 'SQFTCM'] = 4
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['XS <= 5000', 'S 5000 - 10000', 'M 10000 - 20000', 'L >= 20000']
-    nombres_simples = ['XS', 'S', 'M', 'L']
-
-elif tipo == "Oficina":
-    # pban = 2
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 500, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 500) & (microdatasi['SQFT'] <= 5000), 'SQFTCM'] = 2
-    microdatasi.loc[(microdatasi['SQFT'] >= 5000) & (microdatasi['SQFT'] <= 15000), 'SQFTCM'] = 3
-    microdatasi.loc[(microdatasi['SQFT'] >= 15000) & (microdatasi['SQFT'] < 30000), 'SQFTCM'] = 4
-    microdatasi.loc[microdatasi['SQFT'] >= 30000, 'SQFTCM'] = 5
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['XS <= 500', 'S 500 - 5000', 'M 5000 - 15000', 'L 15000 - 30000', 'XL >= 30000']
-    nombres_simples = ['XS', 'S', 'M', 'L', 'XL']
-
-elif tipo == "Alimentación":
-    # pban = 4
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 250, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 250) & (microdatasi['SQFT'] < 500), 'SQFTCM'] = 2
-    microdatasi.loc[microdatasi['SQFT'] >= 500, 'SQFTCM'] = 3
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['S <= 250', 'M 250 - 500', 'L >= 500']
-    nombres_simples = ['S', 'M', 'L']
-
-elif tipo == "Edificio público":
-    # pban = 7
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 1000, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 1000) & (microdatasi['SQFT'] < 5000), 'SQFTCM'] = 2
-    microdatasi.loc[microdatasi['SQFT'] >= 5000, 'SQFTCM'] = 3
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['S <= 1000', 'M 1000 - 5000', 'L >= 5000']
-    nombres_simples = ['S', 'M', 'L']
-
-elif tipo == "Sanitario":
-    # pban = 6
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 10000, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 10000) & (microdatasi['SQFT'] < 30000), 'SQFTCM'] = 2
-    microdatasi.loc[microdatasi['SQFT'] >= 30000, 'SQFTCM'] = 3
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['S <= 10000', 'M 10000 - 30000', 'L >= 30000']
-    nombres_simples = ['S', 'M', 'L']
-
-elif tipo == "Servicios":
-    # pban = 5
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[microdatasi['SQFT'] <= 500, 'SQFTCM'] = 1
-    microdatasi.loc[(microdatasi['SQFT'] > 500) & (microdatasi['SQFT'] < 2000), 'SQFTCM'] = 2
-    microdatasi.loc[microdatasi['SQFT'] >= 2000, 'SQFTCM'] = 3
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['S <= 500', 'M 500 - 2000', 'L >= 2000']
-    nombres_simples = ['S', 'M', 'L']
-
-elif tipo == "Comercio":
-    # pban = 10
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[(microdatasi['SQFT']) <= 2000, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 2000) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 2 
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) <= 15000), 'SQFTCM'] = 3 
-    microdatasi.loc[(microdatasi['SQFT']) >= 15000, 'SQFTCM'] = 4
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['XS <= 2000', 'S 2000 - 5000', 'M 5000 - 15000', 'L >= 15000']
-    nombres_simples = ['XS', 'S', 'M', 'L']
-
-elif tipo == "Vacíos":
-    # pban = 1
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[(microdatasi['SQFT']) <= 500, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 500) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 2 
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) <= 10000), 'SQFTCM'] = 3 
-    microdatasi.loc[(microdatasi['SQFT']) >= 10000, 'SQFTCM'] = 4
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['XS <= 500', 'S 500 - 5000', 'M 5000 - 10000', 'L >= 10000']
-    nombres_simples = ['XS', 'S', 'M', 'L']
-
-elif tipo == "Otros":
-    # pban = 11
-    # AQUÍ AJUSTO EL TAMAÑO PARA ESTE TIPO DE EDIF.
-    microdatasi.loc[(microdatasi['SQFT']) <= 1000, 'SQFTCM'] = 1
-    microdatasi.loc[((microdatasi['SQFT']) > 1000) & ((microdatasi['SQFT']) <= 2500), 'SQFTCM'] = 2 
-    microdatasi.loc[((microdatasi['SQFT']) > 2500) & ((microdatasi['SQFT']) <= 5000), 'SQFTCM'] = 3
-    microdatasi.loc[((microdatasi['SQFT']) > 5000) & ((microdatasi['SQFT']) < 20000), 'SQFTCM'] = 4
-    microdatasi.loc[(microdatasi['SQFT']) >= 20000, 'SQFTCM'] = 5
-    microdatasi['SQFTCM'] = microdatasi['SQFTCM'].astype(int)
-
-    nombres = ['XS <= 1000', 'S 1000 - 2500', 'M 2500 - 5000', 'L 5000 - 20000', 'XL >= 20000']
-    nombres_simples = ['XS', 'S', 'M', 'L', 'XL']
-
-#FILTRO TAMAÑO
-if tamaño is not None and grafica_tipo == "Consumo general":
-    graficas = [
-        g for g in graficas
-        if g != "Estructura del área por tamaños"
-    ]
-elif tamaño is not None and grafica_tipo == "Stock":
-    graficas = [
-        g for g in graficas
-        if g != "Distribución del consumo por tamaño"
-    ]
-elif tamaño is not None and grafica_tipo == "Consumo por Usos Finales":
-    graficas = [
-        g for g in graficas
-        if g != "Análisis del Consumo por tamaño y Usos Finales"
-    ]
-
-#ELECCIÓN GRÁFICA
-with st.sidebar:
-    grafica_idx = st.radio("Seleccione la gráfica:", graficas)
+    grafica_idx = st.radio("Gráficas:", graficas)
 
 st.markdown(
     f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_tipo} - {tipo}</div>",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 st.markdown(
     f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_idx} - {tipo}</div>",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
+
 x = np.arange(1990, 2023)
 
 st.markdown("---")
 
+# Etiquetas de tamaño usadas por las gráficas que agrupan por SQFTCM
+nombres_simples = SIZE_CONFIG[tipo]["labels"]
+nombres = []
+for i, etiqueta in enumerate(nombres_simples, start=1):
+    edificios_tamano = microdatasi[microdatasi["SQFTCM"] == i]
+    if not edificios_tamano.empty:
+        min_m2 = edificios_tamano["SQFT"].min()
+        max_m2 = edificios_tamano["SQFT"].max()
+        nombres.append(f"{etiqueta} {min_m2:.0f} - {max_m2:.0f}")
+    else:
+        nombres.append(etiqueta)
+
+espacio1, contenido, espacio2 = st.columns([1, 3, 1])
+
 #AQUI APARECE EL CÓDIGO DE CADA GRÁFICA, QUE VARÍA SEGÚN EL TIPO DE EDIFICIO
-espacio1, contenido, espacio2 = st.columns([1,3,1])
 
 if grafica_idx == "Estructura del área por tamaños":
-    # Inicializar listas
     etiquetas = []
     valores = []
     medias = []
-    # Bucle para calcular los valores y medias para cada 'SQFTCM'
-    n = len(nombres_simples)+1
+
+    n = len(nombres_simples) + 1
     for i in range(1, n):
         Edi = microdatasi.query(f'SQFTCM=={i}')
         SQEdi = Edi['SQFT'] * Edi['FINALWT']
         TotalEdi = SQEdi.sum()
         TotalWTEdi = Edi['FINALWT'].sum()
         MediaEdi = TotalEdi / TotalWTEdi if TotalWTEdi > 0 else 0
+
         valores.append(TotalEdi)
         medias.append(MediaEdi)
-        etiquetas.append(f'{nombres_simples[i-1]}')
+        etiquetas.append(nombres_simples[i - 1])
 
-    # Crear gráfico circular
-    fig, ax = plt.subplots(figsize=(8, 10))
-    wedges, texts, autotexts = ax.pie(
-        valores,
-        labels=etiquetas,
-        autopct='%0.0f%%',
-        startangle=90,
-        colors=plt.cm.Paired.colors,
-        textprops={'fontsize': 14, 'weight': 'bold'}
+    df_resultados = pd.DataFrame({
+        "Categoría": etiquetas,
+        "Total (m²)": valores,
+        "Promedio (m²/Edif)": medias,
+    })
+
+    render_horizontal_percentage_bar(
+        df_resultados,
+        category_col="Categoría",
+        value_col="Total (m²)",
+        xaxis_title="Porcentaje de superficie total (%)",
+        hover_category_name="Tamaño",
     )
-    ax.axis('equal')
 
-    # Crear la leyenda con nombre y promedio
-    leyenda = [f"{nombres[i]} - Promedio:{medias[i]:.2f} m²/Edif" for i in range(n-1)]
-    ax.legend(leyenda, title="Tamaños Promedio", loc="upper left", bbox_to_anchor=(1, 1), fontsize=12)
+    df_resultados = add_percentage_column(df_resultados, "Total (m²)")
 
-    with contenido:
-        st.pyplot(fig, use_container_width=True)
-
-        # Crear DataFrame con resultados
-        df_resultados = pd.DataFrame({
-            "Categoría": etiquetas,
-            "Total (m²)": valores,
-            "Promedio (m²/Edif)": medias
-        })
-        # Mostrar tabla en Streamlit
-        col1, col2, col3 = st.columns([1, 8, 1])  # Columna central más ancha
-        with col2:
-            st.subheader("Tabla Resultados")
-            # st.dataframe(df_resultados, use_container_width=True, hide_index=True)
-            st.dataframe(
-                df_resultados.style.format({
-                    "Total (m²)": "{:.0f}",
-                    "Promedio (m²/Edif)": "{:.0f}"
-                }),
-                use_container_width=True,
-                hide_index=True
-            )
+    render_results_table(
+        df_resultados,
+        {
+            "Total (m²)": "{:.0f}",
+            "Promedio (m²/Edif)": "{:.0f}",
+            "Porcentaje (%)": "{:.2f}",
+        },
+    )
 
 elif grafica_idx == "Distribución de superficie por edad":
 
-    # Función para calcular la superficie total y media por rango de años
     def calcular_superficie(rango_yrconcn, microdatasi):
         edi = microdatasi.query(f'YRCONCN == {rango_yrconcn}')
         sq_edi = edi['SQFT'] * edi['FINALWT']
-        total_edi = sq_edi.sum()  # Superficie total de ese rango de años
-        total_wt_edi = edi['FINALWT'].sum()  # Número de edificios
-        media_edi = total_edi / total_wt_edi if total_wt_edi > 0 else 0  # Área media de ese rango de años
+        total_edi = sq_edi.sum()
+        total_wt_edi = edi['FINALWT'].sum()
+        media_edi = total_edi / total_wt_edi if total_wt_edi > 0 else 0
         return total_edi, media_edi
 
-    # Lista de rangos de años (1: antes 1960, 2: 1960-1980, 3: 1980-2000, 4: 2000-2018)
     rangos_yrconcn = [1, 2, 3, 4]
     nombres_rangos = ['Antes 1960', '1960-1980', '1980-2000', '2000-2018']
 
-    # Inicializar listas para los totales y las medias
     totales = []
     medias = []
     labels = []
 
-    # Calcular los valores para cada rango de años
     for i, rango in enumerate(rangos_yrconcn):
         total, media = calcular_superficie(rango, microdatasi)
         totales.append(total)
         medias.append(media)
         labels.append(nombres_rangos[i])
 
-    # Crear gráfico circular
-    plt.figure(figsize=(10, 8))  # Aumentamos el tamaño de la figura
-    plt.pie(totales, labels=labels, autopct='%1.0f%%', startangle=90, textprops={'fontsize': 14, 'weight': 'bold'})
-    plt.axis('equal')  # Asegura que el gráfico sea circular
+    df_resultados = pd.DataFrame({
+        "Categoría": labels,
+        "Total (m²)": totales,
+        "Media (m²/Edif)": medias,
+    })
 
-    # Agregar una leyenda con la información completa
-    leyenda = [f'{nombres_rangos[i]}: {medias[i]:.0f} m2/Edif' for i in range(4)]
-    plt.legend(leyenda, title="Período y Media de Superficie", loc="upper left", bbox_to_anchor=(1, 1), fontsize=12)
+    render_horizontal_percentage_bar(
+        df_resultados,
+        category_col="Categoría",
+        value_col="Total (m²)",
+        xaxis_title="Porcentaje de superficie total (%)",
+        hover_category_name="Edad",
+    )
 
-    # Ajustar el diseño para evitar que se corten las etiquetas
-    plt.tight_layout()
+    df_resultados = add_percentage_column(df_resultados, "Total (m²)")
 
-    with contenido:
-        st.pyplot(plt)
-
-        # Crear DataFrame con resultados
-        df_resultados = pd.DataFrame({
-            "Categoría": labels,
-            "Total (m²)": totales,
-            "Media (m²/Edif)": medias
-        })
-        # Mostrar tabla en Streamlit
-        col1, col2, col3 = st.columns([1, 8, 1])  # Columna central más ancha
-        with col2:
-            st.subheader("Tabla Resultados")
-            # st.dataframe(df_resultados, use_container_width=True, hide_index=True)
-            st.dataframe(
-                df_resultados.style.format({
-                    "Total (m²)": "{:.0f}",
-                    "Media (m²/Edif)": "{:.0f}"
-                }),
-                use_container_width=True,
-                hide_index=True
-            )
+    render_results_table(
+        df_resultados,
+        {
+            "Total (m²)": "{:.0f}",
+            "Media (m²/Edif)": "{:.0f}",
+            "Porcentaje (%)": "{:.2f}",
+        },
+    )
 
 elif grafica_idx == "Distribución de Superficies por Categoría Climática":
-    # Definir las categorías climáticas y su respectivo PUBCLIM
     climate_categories = {
         'Frío o muy frío': 1,
         'Frío': 2,
         'Templado': 3,
         'Cálido': 4,
-        'Muy cálido': 5
+        'Muy cálido': 5,
     }
 
-    # Inicializar listas para los cálculos
+    categorias = []
     totales = []
     medias = []
 
-    # Calcular TotalEdi y MediaEdi para cada categoría
     for category, pubclim in climate_categories.items():
-        # Filtrar el DataFrame
-        Edi = microdatasi.query(f'PUBCLIM=={pubclim}') #El tipo se cambia aquí
-
-        # Calcular la superficie total y media
+        Edi = microdatasi.query(f'PUBCLIM=={pubclim}')
         SQEdi = Edi['SQFT'] * Edi['FINALWT']
         TotalEdi = SQEdi.sum()
         TotalWTEdi = Edi['FINALWT'].sum()
+        MediaEdi = TotalEdi / TotalWTEdi if TotalWTEdi > 0 else 0
 
-        # Evitar división por cero
-        if TotalWTEdi > 0:
-            MediaEdi = TotalEdi / TotalWTEdi
-        else:
-            MediaEdi = 0
-
-        # Guardar los resultados
+        categorias.append(category)
         totales.append(TotalEdi)
         medias.append(MediaEdi)
 
-        # # Mostrar resultados
-        # print(f'{category} - Superficie Total: {TotalEdi:.2f}, Superficie Media: {MediaEdi:.2f}')
+    df_clima = pd.DataFrame({
+        "Categoría climática": categorias,
+        "Total (m²)": totales,
+        "Media (m²/Edif)": medias,
+    })
 
-    # Crear el gráfico circular
-    plt.figure(figsize=(10, 8))
-    plt.pie(totales, labels=[f'{category}' for category, media in zip(climate_categories.keys(), medias)], autopct='%1.0f%%', startangle=90,
-             textprops={'fontsize': 14, 'weight': 'bold'})
-    plt.axis('equal')  # Para que el gráfico sea un círculo
+    render_horizontal_percentage_bar(
+        df_clima,
+        category_col="Categoría climática",
+        value_col="Total (m²)",
+        xaxis_title="Porcentaje de superficie total (%)",
+        hover_category_name="Clima",
+    )
 
-    # Crear leyenda aparte (sólo el nombre y la media)
-    leyenda = [f"{category}: {media:.2f} m²/Edif" for category, media in zip(climate_categories.keys(), medias)]
-    plt.legend(leyenda, title="Clima y Superficie Media", loc="upper left", bbox_to_anchor=(1, 1), fontsize=12)
+    df_clima = add_percentage_column(df_clima, "Total (m²)")
 
-    plt.tight_layout()
-    with contenido:
-        st.pyplot(plt)
+    render_results_table(
+        df_clima,
+        {
+            "Total (m²)": "{:.0f}",
+            "Media (m²/Edif)": "{:.0f}",
+            "Porcentaje (%)": "{:.2f}",
+        },
+    )
 
 elif grafica_idx == "Distribución del consumo por tamaño":
 
-    st.title("DEJO LAS UNIDADES KTOE ASI?")
+    st.title("ESTAN MAL LAS UNIDADES KTOE ASI?")
 
     sqftcm_ranges = [1, 2, 3]
     labels = ['S', 'M', 'L']
     total_consumption_values = []
     media_consumo_por_edificio = []
 
-    # Cálculo de los consumos totales y medios por categoría
     for sqftcm in sqftcm_ranges:
         edi = microdatasi.query(f'SQFTCM == {sqftcm}')
-        # Consumo total ponderado
         total_consumption = (edi['MFBTU'] * edi['FINALWT']).sum()
         total_consumption_values.append(total_consumption)
-        # Consumo medio ponderado
+
         total_wt = edi['FINALWT'].sum()
         if total_wt > 0:
-            media_consumo = (total_consumption / total_wt) * 1000 #para pasar de Mtoe a ktoe
+            media_consumo = (total_consumption / total_wt) * 1000
         else:
             media_consumo = 0
         media_consumo_por_edificio.append(media_consumo)
 
-    # Suma total de consumos convertida a Mtoe
-    ConsTotal = sum(total_consumption_values)
+    df_consumo_tamano = pd.DataFrame({
+        "Tamaño": labels,
+        "Consumo (Mtoe)": total_consumption_values,
+        "Consumo medio (ktoe/Edif)": media_consumo_por_edificio,
+    })
 
-    # Crear gráfico circular con etiquetas personalizadas
-    plt.figure(figsize=(10, 8))
-    plt.pie(
-        total_consumption_values, 
-        labels=labels, 
-        autopct='%1.1f%%', 
-        startangle=90,
-        textprops={'fontsize': 14, 'weight': 'bold'}
+    render_horizontal_percentage_bar(
+        df_consumo_tamano,
+        category_col="Tamaño",
+        value_col="Consumo (Mtoe)",
+        xaxis_title="Porcentaje del consumo total (%)",
+        hover_category_name="Tamaño",
     )
-    plt.axis('equal')  # Para que el gráfico sea un círculo
 
-    # Crear leyenda aparte (nombre y consumo medio)
-    leyenda = [f"{nombre}: {media_consumo:.4f} ktoe/Edif" for nombre, media_consumo in zip(labels, media_consumo_por_edificio)]
-    plt.legend(leyenda, title="Tamaño y Consumo Medio", loc="upper left", bbox_to_anchor=(1, 1), fontsize=12)
+    df_consumo_tamano = add_percentage_column(df_consumo_tamano, "Consumo (Mtoe)")
 
-    plt.tight_layout()
-    with contenido:
-        st.pyplot(plt)
+    render_results_table(
+        df_consumo_tamano,
+        {
+            "Consumo (Mtoe)": "{:.4f}",
+            "Consumo medio (ktoe/Edif)": "{:.4f}",
+            "Porcentaje (%)": "{:.2f}",
+        },
+    )
 
 elif grafica_idx == "Estructura del consumo por usos":
-    # Datos de la columna que representan los diferentes usos energéticos
     usos = ['MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU']
     usos_labels = ['Calefacción', 'Aire acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
 
@@ -857,24 +778,15 @@ elif grafica_idx == "Estructura del consumo por usos":
     if Edi.empty:
         st.warning("No hay datos disponibles para los filtros seleccionados.")
         st.stop()
-    # Cálculo de los consumos totales por uso
+
     total_consumos = []
-
-    # for uso in usos:
-    #     consumo = (Edi[uso] * Edi['FINALWT']).sum()
-    #     total_consumos.append(consumo)
-
-    # ----------------------------
-    # CÁLCULO DE CONSUMOS
-    # ----------------------------
-
     for uso in usos:
         consumo = (Edi[uso] * Edi['FINALWT']).sum()
         total_consumos.append(consumo)
 
     df_usos = pd.DataFrame({
         "Uso": usos_labels,
-        "Consumo (Mtoe)": total_consumos
+        "Consumo (Mtoe)": total_consumos,
     })
 
     df_usos = df_usos[df_usos["Consumo (Mtoe)"] > 0]
@@ -883,151 +795,23 @@ elif grafica_idx == "Estructura del consumo por usos":
         st.warning("Todos los consumos son cero para los filtros seleccionados.")
         st.stop()
 
-    df_usos["Porcentaje (%)"] = (
-        df_usos["Consumo (Mtoe)"] /
-        df_usos["Consumo (Mtoe)"].sum()
-    ) * 100
-
-    # Ordenar para mejor visualización en barras
-    # df_usos = df_usos.sort_values("Porcentaje (%)", ascending=True)
-
-    st.subheader("1 Pie chart - MatPlotly")
-    # PIE CHART MATPLOTLIB
-    plt.figure(figsize=(10, 8))
-    plt.pie(df_usos["Consumo (Mtoe)"], labels=df_usos["Uso"], autopct='%1.f%%', startangle=90, textprops={'weight':'bold'}, pctdistance=0.9)
-    with contenido:
-        st.pyplot(plt)
-    
-    # PIE CHART PLOTLY
-    st.subheader("2️ Pie chart - Plotly")
-
-    fig_pie = px.pie(
+    render_horizontal_percentage_bar(
         df_usos,
-        names="Uso",
-        values="Consumo (Mtoe)",
-        hole=0.45
-    )
-
-    fig_pie.update_traces(
-        textinfo="percent",
-        hovertemplate="<b>%{label}</b><br>" +
-                      "Consumo: %{value:.2f} Mtoe<br>" +
-                      "Porcentaje: %{percent}"
-    )
-
-    fig_pie.update_layout(
-        margin=dict(t=40, b=20, l=20, r=20)
-    )
-    with contenido:
-        st.plotly_chart(fig_pie, use_container_width=True)
-
-    st.subheader("3️ Barras horizontales relativas")
-
-    fig_bar = px.bar(
-        df_usos,
-        x="Porcentaje (%)",
-        y="Uso",
-        orientation="h",
-        text=df_usos["Porcentaje (%)"].round(1).astype(str) + "%"
-    )
-
-    fig_bar.update_layout(
+        category_col="Uso",
+        value_col="Consumo (Mtoe)",
         xaxis_title="Porcentaje del consumo total (%)",
-        yaxis_title="",
-        margin=dict(t=40, b=20, l=20, r=20)
+        hover_category_name="Uso",
     )
 
-    fig_bar.update_traces(
-        hovertemplate="<b>%{y}</b><br>" +
-                      "Porcentaje: %{x:.2f}%"
-    )
-    with contenido:
-        st.plotly_chart(fig_bar, use_container_width=True)
+    df_usos = add_percentage_column(df_usos, "Consumo (Mtoe)")
 
-    st.subheader("4 Barras horizontales relativas - Plotly")
-
-    fig_bar = px.bar(
+    render_results_table(
         df_usos,
-        x="Porcentaje (%)",
-        y="Uso",
-        orientation="h",
-        text=df_usos["Porcentaje (%)"].round(1).astype(str) + "%",
-        color="Uso",                     
-        color_discrete_sequence=px.colors.qualitative.Set1  # COLORES
+        {
+            "Consumo (Mtoe)": "{:.4f}",
+            "Porcentaje (%)": "{:.2f}",
+        },
     )
-
-    fig_bar.update_layout(
-        xaxis_title="Porcentaje del consumo total (%)",
-        yaxis_title="",
-        showlegend=False, 
-        margin=dict(t=40, b=20, l=20, r=20)
-    )
-
-    fig_bar.update_traces(
-        hovertemplate="<b>%{y}</b><br>" +
-                      "Porcentaje: %{x:.2f}%"
-    )
-    with contenido:
-        st.plotly_chart(fig_bar, use_container_width=True)
-
-    st.subheader("5 Pie chart - Altair")
-
-    # Pie chart con Altair
-    pie_altair = (
-        alt.Chart(df_usos)
-        .mark_arc(innerRadius=60)  # donut
-        .encode(
-            theta=alt.Theta(field="Consumo (Mtoe)", type="quantitative"),
-            color=alt.Color(field="Uso", type="nominal"),
-            tooltip=[
-                alt.Tooltip("Uso:N"),
-                alt.Tooltip("Consumo (Mtoe):Q", format=".2f"),
-                alt.Tooltip("Porcentaje (%):Q", format=".2f")
-            ]
-        )
-        .properties(
-            width=500,
-            height=400,
-            title="Estructura porcentual del consumo energético"
-        )
-    )
-    with contenido:
-        st.altair_chart(pie_altair, use_container_width=True)
-
-    st.subheader("6 Barras horizontales - Altair")
-
-    bar_altair = (
-        alt.Chart(df_usos)
-        .mark_bar()
-        .encode(
-            x=alt.X(
-                "Porcentaje (%):Q",
-                title="Porcentaje del consumo total (%)"
-            ),
-            y=alt.Y(
-                "Uso:N",
-                sort="-x",
-                title=None
-            ),
-            color=alt.Color(
-                "Uso:N",
-                legend=None
-            ),
-            tooltip=[
-                alt.Tooltip("Uso:N"),
-                alt.Tooltip("Porcentaje (%):Q", format=".2f"),
-                alt.Tooltip("Consumo (Mtoe):Q", format=".2f")
-            ]
-        )
-        .properties(
-            width=600,
-            height=400,
-            title="Distribución relativa del consumo energético por usos"
-        )
-    )
-    with contenido:
-        st.altair_chart(bar_altair, use_container_width=True)
-
 
 elif grafica_idx == "Análisis del Consumo por Clima y Usos Finales":
     # Definición de los usos energéticos y sus etiquetas
@@ -1054,6 +838,12 @@ elif grafica_idx == "Análisis del Consumo por Clima y Usos Finales":
 
         climate_consumptions.append(consumos)
 
+    df_resultados = pd.DataFrame(
+        climate_consumptions,
+        columns=[f"{uso} (%)" for uso in usos_labels],
+    )
+    df_resultados.insert(0, "Clima", climates)
+
     # Crear el gráfico de barras apiladas
     fig, ax = plt.subplots(figsize=(8, 12))  # Ajuste de la figura: más alta (12) y más estrecha (8)
 
@@ -1072,7 +862,12 @@ elif grafica_idx == "Análisis del Consumo por Clima y Usos Finales":
         # Mostrar el gráfico
         st.pyplot(plt)
 
-elif grafica_idx == "Análisis del Consumo por año y Usos Finales":
+    render_results_table(
+        df_resultados,
+        {col: "{:.2f}" for col in df_resultados.columns if col != "Clima"},
+    )
+
+elif grafica_idx == "Análisis del Consumo por Edad y Usos Finales":
     # Definición de los usos energéticos y sus etiquetas
     usos = ['MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU']
     usos_labels = ['Calefacción', 'Aire Acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
@@ -1097,6 +892,12 @@ elif grafica_idx == "Análisis del Consumo por año y Usos Finales":
 
         climate_consumptions.append(consumos)
 
+    df_resultados = pd.DataFrame(
+        climate_consumptions,
+        columns=[f"{uso} (%)" for uso in usos_labels],
+    )
+    df_resultados.insert(0, "Edad", climates)
+
     # Crear el gráfico de barras apiladas
     fig, ax = plt.subplots(figsize=(8, 12))
 
@@ -1114,6 +915,11 @@ elif grafica_idx == "Análisis del Consumo por año y Usos Finales":
     with contenido:
         # Mostrar el gráfico
         st.pyplot(plt)
+
+    render_results_table(
+        df_resultados,
+        {col: "{:.2f}" for col in df_resultados.columns if col != "Edad"},
+    )
 
 elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
     # Definición de los usos energéticos y sus etiquetas
@@ -1140,6 +946,12 @@ elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
 
         climate_consumptions.append(consumos)
 
+    df_resultados = pd.DataFrame(
+        climate_consumptions,
+        columns=[f"{uso} (%)" for uso in usos_labels],
+    )
+    df_resultados.insert(0, "Tamaño", climates)
+
     # Crear el gráfico de barras apiladas
     fig, ax = plt.subplots(figsize=(8, 12))  # Ajuste de la figura: más alta (12) y más estrecha (8)
 
@@ -1157,43 +969,44 @@ elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
     with contenido:
         st.pyplot(fig)
 
+    render_results_table(
+        df_resultados,
+        {col: "{:.2f}" for col in df_resultados.columns if col != "Tamaño"},
+    )
+
 elif grafica_idx == "Estructura del consumo por fuentes":
     fuentes = ['ELBTU', 'NGBTU', 'FKBTU', 'DHBTU']
     fuentes_labels = ['Electricidad', 'Gas Natural', 'Fuel oil', 'Vapor de distrito']
 
-    # Colores personalizados (puedes usar los que desees)
-    colores = ['purple', 'yellow', 'brown', 'deepskyblue']
-
-    # Selección de edificios comerciales 
     Edi = microdatasi.copy()
 
-    # Cálculo de los consumos totales por uso
     total_consumos = []
-
     for fuente in fuentes:
         consumo = (Edi[fuente] * Edi['FINALWT']).sum()
         total_consumos.append(consumo)
 
-    # Crear gráfico circular
-    plt.figure(figsize=(8, 8))
-    # plt.pie(total_consumos, labels=fuentes_labels, autopct='%1.1f%%', startangle=90, pctdistance=0.9, colors=colores, labeldistance=1.1)
+    df_fuentes = pd.DataFrame({
+        "Fuente": fuentes_labels,
+        "Consumo (Mtoe)": total_consumos,
+    })
 
-    # st.pyplot(plt)
-    explode = [0, 0, 0.2, 0.2]  # Separa Gasoil y Vapor de distrito
-    wedges, texts, autotexts = plt.pie(
-        total_consumos,
-        autopct='%1.1f%%',
-        startangle=90,
-        colors=colores,
-        pctdistance=1.1,
-        textprops={'weight':'bold'},
-        explode=explode
+    render_horizontal_percentage_bar(
+        df_fuentes,
+        category_col="Fuente",
+        value_col="Consumo (Mtoe)",
+        xaxis_title="Porcentaje del consumo total (%)",
+        hover_category_name="Fuente",
     )
-    plt.legend(wedges, fuentes_labels, title="Fuente", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
-    plt.tight_layout()
 
-    with contenido:
-        st.pyplot(plt)
+    df_fuentes = add_percentage_column(df_fuentes, "Consumo (Mtoe)")
+
+    render_results_table(
+        df_fuentes,
+        {
+            "Consumo (Mtoe)": "{:.4f}",
+            "Porcentaje (%)": "{:.2f}",
+        },
+    )
 
 elif grafica_idx == "Distribución del consumo por Usos Finales y Tipo de Energía":
     # Selección de edificios comerciales 
@@ -1242,6 +1055,14 @@ elif grafica_idx == "Distribución del consumo por Usos Finales y Tipo de Energ�
     porcentajes_por_uso = {uso: [(valor / total) * 100 if total != 0 else 0 for valor in data_por_uso[uso]]
                            for uso, total in zip(usos_finales, totales_por_uso)}
     
+    df_resultados = pd.DataFrame({
+        "Uso final": usos_finales,
+        **{
+            f"{energia} (%)": [porcentajes_por_uso[uso][i] for uso in usos_finales]
+            for i, energia in enumerate(tipos_energia_lista)
+        },
+    })
+
     # Crear el gráfico apilado con mejor resolución
     fig, ax = plt.subplots(figsize=(12, 7), dpi=120)
 
@@ -1291,6 +1112,11 @@ elif grafica_idx == "Distribución del consumo por Usos Finales y Tipo de Energ�
         # Mostrar en Streamlit
         st.pyplot(fig, use_container_width=True)
 
+    render_results_table(
+        df_resultados,
+        {col: "{:.2f}" for col in df_resultados.columns if col != "Uso final"},
+    )
+
 elif grafica_idx == "Consumo de Energía por Clima y Tipo de Energía":
     consumos = {
         'Clima': ['Muy frío', 'Frío', 'Templado', 'Cálido', 'Muy cálido'],
@@ -1322,6 +1148,15 @@ elif grafica_idx == "Consumo de Energía por Clima y Tipo de Energía":
         .set_index('Clima')
         .apply(lambda x: x / x.sum(), axis=1) * 100
     )
+
+    df_resultados = df_consumos_pct.reset_index()
+    df_resultados.columns = [
+        "Clima",
+        "Eléctrico (%)",
+        "Gas natural (%)",
+        "Fuel Oil (%)",
+        "Vapor de distrito (%)",
+    ]
 
     fig, ax = plt.subplots(figsize=(12, 7), dpi=120)
 
@@ -1359,6 +1194,11 @@ elif grafica_idx == "Consumo de Energía por Clima y Tipo de Energía":
         # Mostrar en Streamlit
         st.pyplot(fig, use_container_width=True)
 
+    render_results_table(
+        df_resultados,
+        {col: "{:.2f}" for col in df_resultados.columns if col != "Clima"},
+    )
+
 elif grafica_idx == "Consumo de Energía por Tamaño y Tipo de Energía":
     consumos = {
         'Tamaño': ['S', 'M', 'L'],
@@ -1388,6 +1228,15 @@ elif grafica_idx == "Consumo de Energía por Tamaño y Tipo de Energía":
         .set_index('Tamaño')
         .apply(lambda x: x / x.sum(), axis=1) * 100
     )
+
+    df_resultados = df_consumos_pct.reset_index()
+    df_resultados.columns = [
+        "Tamaño",
+        "Eléctrico (%)",
+        "Gas natural (%)",
+        "Fuel Oil (%)",
+        "Vapor de distrito (%)",
+    ]
 
     fig, ax = plt.subplots(figsize=(12, 7), dpi=120)
 
@@ -1426,6 +1275,11 @@ elif grafica_idx == "Consumo de Energía por Tamaño y Tipo de Energía":
         # Mostrar en Streamlit
         st.pyplot(fig, use_container_width=True)
 
+    render_results_table(
+        df_resultados,
+        {col: "{:.2f}" for col in df_resultados.columns if col != "Tamaño"},
+    )
+
 elif grafica_idx == "Consumo de Energía por Edad y Tipo de Energía":
     consumos = {
         'Edad': ['Antes 1960', '1960-1980', '1980-2000', '2000-2018'],
@@ -1455,6 +1309,15 @@ elif grafica_idx == "Consumo de Energía por Edad y Tipo de Energía":
         .set_index('Edad')
         .apply(lambda x: x / x.sum(), axis=1) * 100
     )
+
+    df_resultados = df_consumos_pct.reset_index()
+    df_resultados.columns = [
+        "Edad",
+        "Eléctrico (%)",
+        "Gas natural (%)",
+        "Fuel Oil (%)",
+        "Vapor de distrito (%)",
+    ]
 
     fig, ax = plt.subplots(figsize=(12, 7), dpi=120)
 
@@ -1492,6 +1355,11 @@ elif grafica_idx == "Consumo de Energía por Edad y Tipo de Energía":
     with contenido:
         # Mostrar en Streamlit
         st.pyplot(fig, use_container_width=True)
+
+    render_results_table(
+        df_resultados,
+        {col: "{:.2f}" for col in df_resultados.columns if col != "Edad"},
+    )
 
 st.markdown("---")
 st.caption("Desarrollado por JYK - Fuente: U.S. Energy Information Administration (eia)")
