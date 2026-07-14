@@ -178,6 +178,10 @@ CLIMA_EDIFICIO = ['Frío o muy frío', 'Frío', 'Templado', 'Cálido', 'Muy cál
 CLIMA_EDIFICIO_PUBCLIM1 = [1, 2, 3, 4, 5]
 EDAD_EDIFICIO = ['Antes de 1960', '1960-1979', '1980-1999', '2000-2018']
 EDAD_EDIFICIO_YRCONC1 = [1, 2, 3, 4]
+USOS_LABELS = ['Calefacción', 'Aire Acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
+COLORES_USOS = ['red', 'deepskyblue', 'lightblue', 'orange', 'yellow', '#A65E2E', '#00A6A6', 'green', 'lightgreen', 'gray']
+FUENTES_LABELS = ['Electricidad', 'Gas Natural', 'Fuel Oil', 'Vapor de distrito']
+COLORES_FUENTES = ['skyblue', 'yellow', '#005F6B', 'lightgreen']
 
 # =========================================================
 # FUNCIONES DE PREPARACIÓN Y FILTROS
@@ -530,7 +534,6 @@ if grafica_tipo == "Indicadores Clave":
     Consumo = sum((microdatasi["MFBTU"]*microdatasi["FINALWT"]) + (microdatasi["ELBTU"]*microdatasi["FINALWT"]))
 
     df_indicadores = pd.DataFrame([{
-        "Tipo":tipo,
         "Población [Millones]":"8.3",
         "Superficie [Mm2]":sum(microdatasi["SQFT"])/1000000,
         "Número de edificios":sum(microdatasi["FINALWT"]),
@@ -795,13 +798,37 @@ elif grafica_idx == "Estructura del consumo por usos":
         st.warning("Todos los consumos son cero para los filtros seleccionados.")
         st.stop()
 
-    render_horizontal_percentage_bar(
-        df_usos,
-        category_col="Uso",
-        value_col="Consumo (Mtoe)",
-        xaxis_title="Porcentaje del consumo total (%)",
-        hover_category_name="Uso",
+    df_plot = add_percentage_column(df_usos, "Consumo (Mtoe)")
+    df_plot = df_plot[df_plot["Consumo (Mtoe)"] > 0]
+
+    fig_bar = px.bar(
+        df_plot,
+        x="Porcentaje (%)",
+        y="Uso",
+        orientation="h",
+        text=df_plot["Porcentaje (%)"].round(1).astype(str) + "%",
+        color="Uso",
+        color_discrete_map={
+            uso: color for uso, color in zip(USOS_LABELS, COLORES_USOS)
+        },
     )
+
+    fig_bar.update_layout(
+        xaxis_title="Porcentaje del consumo total (%)",
+        yaxis_title="",
+        showlegend=False,
+        margin=dict(t=40, b=20, l=20, r=20),
+    )
+
+    fig_bar.update_traces(
+        hovertemplate=(
+            "<b>Uso: %{y}</b><br>"
+            "Porcentaje: %{x:.2f}%<extra></extra>"
+        )
+    )
+
+    with contenido:
+        st.plotly_chart(fig_bar, use_container_width=True)
 
     df_usos = add_percentage_column(df_usos, "Consumo (Mtoe)")
 
@@ -816,10 +843,9 @@ elif grafica_idx == "Estructura del consumo por usos":
 elif grafica_idx == "Análisis del Consumo por Clima y Usos Finales":
     # Definición de los usos energéticos y sus etiquetas
     usos = ['MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU']
-    usos_labels = ['Calefacción', 'Aire Acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
 
-    # Colores para los usos energéticos
-    colors = ['red', 'deepskyblue', 'violet', 'orange', 'yellow', 'purple', 'blue', 'green', 'lightgreen', 'gray']
+    usos_labels = USOS_LABELS
+    colors = COLORES_USOS
 
     # Inicialización de los datos por clima
     climates = ['Muy Frío', 'Frío', 'Templado', 'Cálido', 'Muy Cálido']
@@ -870,10 +896,8 @@ elif grafica_idx == "Análisis del Consumo por Clima y Usos Finales":
 elif grafica_idx == "Análisis del Consumo por Edad y Usos Finales":
     # Definición de los usos energéticos y sus etiquetas
     usos = ['MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU']
-    usos_labels = ['Calefacción', 'Aire Acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
-
-    # Colores para los usos energéticos
-    colors = ['red', 'deepskyblue', 'violet', 'orange', 'yellow', 'purple', 'blue', 'green', 'lightgreen', 'gray']
+    usos_labels = USOS_LABELS
+    colors = COLORES_USOS
 
     # Inicialización de los datos por clima
     climates = ['Antes 1960', '1960-1980', '1980-2000', '2000-2018']
@@ -924,10 +948,8 @@ elif grafica_idx == "Análisis del Consumo por Edad y Usos Finales":
 elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
     # Definición de los usos energéticos y sus etiquetas
     usos = ['MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU']
-    usos_labels = ['Calefacción', 'Aire Acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
-
-    # Colores para los usos energéticos
-    colors = ['red', 'deepskyblue', 'violet', 'orange', 'yellow', 'purple', 'blue', 'green', 'lightgreen', 'gray']
+    usos_labels = USOS_LABELS
+    colors = COLORES_USOS
 
     # Inicialización de los datos por clima
     climates = ['S', 'M', 'L']
@@ -976,7 +998,7 @@ elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
 
 elif grafica_idx == "Estructura del consumo por fuentes":
     fuentes = ['ELBTU', 'NGBTU', 'FKBTU', 'DHBTU']
-    fuentes_labels = ['Electricidad', 'Gas Natural', 'Fuel oil', 'Vapor de distrito']
+    fuentes_labels = FUENTES_LABELS
 
     Edi = microdatasi.copy()
 
@@ -990,13 +1012,37 @@ elif grafica_idx == "Estructura del consumo por fuentes":
         "Consumo (Mtoe)": total_consumos,
     })
 
-    render_horizontal_percentage_bar(
-        df_fuentes,
-        category_col="Fuente",
-        value_col="Consumo (Mtoe)",
-        xaxis_title="Porcentaje del consumo total (%)",
-        hover_category_name="Fuente",
+    df_plot = add_percentage_column(df_fuentes, "Consumo (Mtoe)")
+    df_plot = df_plot[df_plot["Consumo (Mtoe)"] > 0]
+
+    fig_bar = px.bar(
+        df_plot,
+        x="Porcentaje (%)",
+        y="Fuente",
+        orientation="h",
+        text=df_plot["Porcentaje (%)"].round(1).astype(str) + "%",
+        color="Fuente",
+        color_discrete_map={
+            fuente: color for fuente, color in zip(FUENTES_LABELS, COLORES_FUENTES)
+        },
     )
+
+    fig_bar.update_layout(
+        xaxis_title="Porcentaje del consumo total (%)",
+        yaxis_title="",
+        showlegend=False,
+        margin=dict(t=40, b=20, l=20, r=20),
+    )
+
+    fig_bar.update_traces(
+        hovertemplate=(
+            "<b>Fuente: %{y}</b><br>"
+            "Porcentaje: %{x:.2f}%<extra></extra>"
+        )
+    )
+
+    with contenido:
+        st.plotly_chart(fig_bar, use_container_width=True)
 
     df_fuentes = add_percentage_column(df_fuentes, "Consumo (Mtoe)")
 
@@ -1066,8 +1112,7 @@ elif grafica_idx == "Distribución del consumo por Usos Finales y Tipo de Energ�
     # Crear el gráfico apilado con mejor resolución
     fig, ax = plt.subplots(figsize=(12, 7), dpi=120)
 
-    # Colores (puedes cambiarlos si quieres)
-    colores = ['purple', 'gold', 'brown', 'deepskyblue']
+    colores = ['skyblue', 'yellow', '#005F6B', 'lightgreen']
 
     # Crear las barras apiladas
     bottom = [0] * len(usos_finales)
@@ -1130,7 +1175,7 @@ elif grafica_idx == "Consumo de Energía por Clima y Tipo de Energía":
     energias = ['ELBTU', 'NGBTU', 'FKBTU', 'DHBTU']
     nombres_energias = ['Eléctrico', 'Gas natural', 'Fuel Oil', 'Vapor de distrito']
 
-    colores = ['purple', 'gold', 'brown', 'deepskyblue']
+    colores = ['skyblue', 'yellow', '#005F6B', 'lightgreen']
 
     for clima in climas:
         EdiClima = microdatasi.query(f'PUBCLIM=={clima}')
@@ -1212,7 +1257,7 @@ elif grafica_idx == "Consumo de Energía por Tamaño y Tipo de Energía":
     energias = ['ELBTU', 'NGBTU', 'FKBTU', 'DHBTU']
     nombres_energias = ['Eléctrico', 'Gas natural', 'Fuel Oil', 'Vapor de distrito']
 
-    colores = ['purple', 'gold', 'brown', 'deepskyblue']
+    colores = ['skyblue', 'yellow', '#005F6B', 'lightgreen']
 
     for tamano in tamanos:
         EdiTamano = microdatasi.query(f'SQFTCM=={tamano}')
@@ -1293,7 +1338,7 @@ elif grafica_idx == "Consumo de Energía por Edad y Tipo de Energía":
     energias = ['ELBTU', 'NGBTU', 'FKBTU', 'DHBTU']
     nombres_energias = ['Eléctrico', 'Gas natural', 'Fuel Oil', 'Vapor de distrito']
 
-    colores = ['purple', 'gold', 'brown', 'deepskyblue']
+    colores = ['skyblue', 'yellow', '#005F6B', 'lightgreen']
 
     for edad in edades:
         EdiEdad = microdatasi.query(f'YRCONCN=={edad}')
