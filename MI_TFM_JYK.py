@@ -150,9 +150,9 @@ SIZE_CONFIG = {
 
 CLASIF_TIPO_GRAFICA = {
     "Stock": [
-        "Distribución de Superficies por Categoría Climática",
-        "Estructura del área por tamaños",
-        "Distribución de superficie por edad",
+        "Estructura por Clima",
+        "Estructura por Tamaño",
+        "Estructura por Edad",
     ],
     "Consumo": [
         "Distribución del consumo por tamaño",
@@ -472,7 +472,7 @@ if tamaño is not None:
     stop_if_empty(microdatasi)
 
     if tamaño is not None and grafica_tipo == "Stock":
-        graficas = remove_graph_option(graficas, "Estructura del área por tamaños")
+        graficas = remove_graph_option(graficas, "Estructura por Tamaño")
     elif tamaño is not None and grafica_tipo == "Consumo":
         graficas = remove_graph_option(graficas, "Distribución del consumo por tamaño")
     elif tamaño is not None and grafica_tipo == "Consumo por Usos Finales":
@@ -495,7 +495,7 @@ if clima is not None:
     stop_if_empty(microdatasi)
 
     if grafica_tipo == "Stock":
-        graficas = remove_graph_option(graficas, "Distribución de Superficies por Categoría Climática")
+        graficas = remove_graph_option(graficas, "Estructura por Clima")
     elif grafica_tipo == "Consumo por Usos Finales":
         graficas = remove_graph_option(graficas, "Análisis del Consumo por Clima y Usos Finales")
     elif grafica_tipo == "Consumo por Tipo de Energía":
@@ -518,7 +518,7 @@ if edad is not None:
     stop_if_empty(microdatasi)
 
     if grafica_tipo == "Stock":
-        graficas = remove_graph_option(graficas, "Distribución de superficie por edad")
+        graficas = remove_graph_option(graficas, "Estructura por Edad")
     elif grafica_tipo == "Consumo por Usos Finales":
         graficas = remove_graph_option(graficas, "Análisis del Consumo por Edad y Usos Finales")
     elif grafica_tipo == "Consumo por Tipo de Energía":
@@ -530,15 +530,39 @@ if grafica_tipo == "Indicadores Clave":
         Unidad_Servicio = "No aplica"
     elif tipo == "Oficina":
         Unidad_Servicio = sum(microdatasi["NWKER"])
+    elif tipo == "Almacenes":
+        Unidad_Servicio = sum(microdatasi["NWKER"])
+    elif tipo == "Alimentación":
+        microdatasi["FDSEAT"] = microdatasi["FDSEAT"].fillna(0)
+        Unidad_Servicio = sum(microdatasi["FDSEAT"])
+    elif tipo == "Edificio público":
+        Unidad_Servicio = sum(microdatasi["NWKER"])
+    elif tipo == "Sanitario":
+        microdatasi["HCBED"] = microdatasi["HCBED"].fillna(0)
+        Unidad_Servicio = sum(microdatasi["HCBED"])
+    elif tipo == "Educación":
+        microdatasi["EDSEAT"] = microdatasi["EDSEAT"].fillna(0)
+        Unidad_Servicio = sum(microdatasi["EDSEAT"])
+    elif tipo == "Alojamiento":
+        microdatasi["LODGRM"] = microdatasi["LODGRM"].fillna(0)
+        Unidad_Servicio = sum(microdatasi["LODGRM"])
+    elif tipo == "Comercio":
+        Unidad_Servicio = sum(microdatasi["NWKER"])
+    elif tipo == "Servicios":
+        Unidad_Servicio = sum(microdatasi["NWKER"])
+    elif tipo == "Otros":
+        Unidad_Servicio = sum(microdatasi["NWKER"])
 
-    Consumo = sum((microdatasi["MFBTU"]*microdatasi["FINALWT"]) + (microdatasi["ELBTU"]*microdatasi["FINALWT"]))
+    microdatasi["MFBTU"] = microdatasi["MFBTU"].fillna(0)
+    microdatasi["ELBTU"] = microdatasi["ELBTU"].fillna(0)
+    Consumo = (sum((microdatasi["MFBTU"]*microdatasi["FINALWT"]) + (microdatasi["ELBTU"]*microdatasi["FINALWT"])))
 
     df_indicadores = pd.DataFrame([{
         "Población [Millones]":"8.3",
         "Superficie [Mm2]":sum(microdatasi["SQFT"])/1000000,
         "Número de edificios":sum(microdatasi["FINALWT"]),
         "Service Unit": Unidad_Servicio,
-        "Consumo": Consumo,
+        "Consumo [Mtoe]": Consumo,
         }])
 
     st.subheader("Indicadores Clave")
@@ -546,6 +570,8 @@ if grafica_tipo == "Indicadores Clave":
         df_indicadores.style.format({
         "Superficie [Mm2]": "{:.0f}",
         "Número de edificios": "{:.0f}",
+        "Service Unit": "{:.0f}",
+        "Consumo [Mtoe]": "{:.3f}",
         }),
         use_container_width=True,
         hide_index=True,
@@ -588,7 +614,7 @@ espacio1, contenido, espacio2 = st.columns([1, 3, 1])
 
 #AQUI APARECE EL CÓDIGO DE CADA GRÁFICA, QUE VARÍA SEGÚN EL TIPO DE EDIFICIO
 
-if grafica_idx == "Estructura del área por tamaños":
+if grafica_idx == "Estructura por Tamaño":
     etiquetas = []
     valores = []
     medias = []
@@ -630,7 +656,7 @@ if grafica_idx == "Estructura del área por tamaños":
         },
     )
 
-elif grafica_idx == "Distribución de superficie por edad":
+elif grafica_idx == "Estructura por Edad":
 
     def calcular_superficie(rango_yrconcn, microdatasi):
         edi = microdatasi.query(f'YRCONCN == {rango_yrconcn}')
@@ -678,7 +704,7 @@ elif grafica_idx == "Distribución de superficie por edad":
         },
     )
 
-elif grafica_idx == "Distribución de Superficies por Categoría Climática":
+elif grafica_idx == "Estructura por Clima":
     climate_categories = {
         'Frío o muy frío': 1,
         'Frío': 2,
@@ -747,12 +773,16 @@ elif grafica_idx == "Distribución del consumo por tamaño":
         else:
             media_consumo = 0
         media_consumo_por_edificio.append(media_consumo)
+        
 
     df_consumo_tamano = pd.DataFrame({
         "Tamaño": labels,
         "Consumo (Mtoe)": total_consumption_values,
+        "EDI": total_wt,
         "Consumo medio (ktoe/Edif)": media_consumo_por_edificio,
     })
+
+    st.title("PARECE QUE EL NÚMERO DE EDIFCIOS ESTA MAL PORQUE DICE QUE ES EL MISMO EN LAS TRES CATEGORIAS")
 
     render_horizontal_percentage_bar(
         df_consumo_tamano,
