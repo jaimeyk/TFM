@@ -23,8 +23,8 @@ BTU_COLUMNS = [
 ]
 
 BTU_TO_KWH = 1.055060 / 3600
-KWH_TO_MTOE = 8.6e-8
-BTU_TO_MTOE = BTU_TO_KWH * KWH_TO_MTOE
+KWH_TO_MTOE = 8.6e-11
+KBTU_TO_MTOE = BTU_TO_KWH * KWH_TO_MTOE * 1000
 SQFT_TO_M2 = 0.092903
 
 TIPOS_EDIFICIO = [
@@ -190,7 +190,7 @@ def load_and_prepare_data(path: str) -> pd.DataFrame:
     """Carga el CSV y aplica las mismas transformaciones iniciales del código original."""
     df = pd.read_csv(path).copy()
 
-    df[BTU_COLUMNS] *= BTU_TO_MTOE
+    df[BTU_COLUMNS] *= KBTU_TO_MTOE
     df['SQFT'] *= SQFT_TO_M2
 
     df.loc[(df['YRCONC'] == 2) | (df['YRCONC'] == 3), 'YRCONCN'] = 1
@@ -526,53 +526,209 @@ if edad is not None:
 
 if grafica_tipo == "Indicadores Clave":
 
-    if tipo == "Vacíos":
-        Unidad_Servicio = "No aplica"
-    elif tipo == "Oficina":
-        Unidad_Servicio = sum(microdatasi["NWKER"])
-    elif tipo == "Almacenes":
-        Unidad_Servicio = sum(microdatasi["NWKER"])
-    elif tipo == "Alimentación":
-        microdatasi["FDSEAT"] = microdatasi["FDSEAT"].fillna(0)
-        Unidad_Servicio = sum(microdatasi["FDSEAT"])
-    elif tipo == "Edificio público":
-        Unidad_Servicio = sum(microdatasi["NWKER"])
-    elif tipo == "Sanitario":
-        microdatasi["HCBED"] = microdatasi["HCBED"].fillna(0)
-        Unidad_Servicio = sum(microdatasi["HCBED"])
-    elif tipo == "Educación":
-        microdatasi["EDSEAT"] = microdatasi["EDSEAT"].fillna(0)
-        Unidad_Servicio = sum(microdatasi["EDSEAT"])
-    elif tipo == "Alojamiento":
-        microdatasi["LODGRM"] = microdatasi["LODGRM"].fillna(0)
-        Unidad_Servicio = sum(microdatasi["LODGRM"])
-    elif tipo == "Comercio":
-        Unidad_Servicio = sum(microdatasi["NWKER"])
-    elif tipo == "Servicios":
-        Unidad_Servicio = sum(microdatasi["NWKER"])
-    elif tipo == "Otros":
-        Unidad_Servicio = sum(microdatasi["NWKER"])
+    def calcular_unidad_servicio(df, tipo_edificio):
+        if tipo == "Vacíos":
+            return "No aplica"
+        elif tipo == "Oficina":
+            return sum(df["NWKER"]*df["FINALWT"])
+        elif tipo == "Almacenes":
+            return sum(df["NWKER"]*df["FINALWT"])
+        elif tipo == "Alimentación":
+            microdatasi["FDSEAT"] = microdatasi["FDSEAT"].fillna(0)
+            return sum(df["FDSEAT"]*df["FINALWT"])
+        elif tipo == "Edificio público":
+            return sum(df["NWKER"]*df["FINALWT"])
+        elif tipo == "Sanitario":
+            microdatasi["HCBED"] = microdatasi["HCBED"].fillna(0)
+            return sum(df["HCBED"]*df["FINALWT"])
+        elif tipo == "Educación":
+            microdatasi["EDSEAT"] = microdatasi["EDSEAT"].fillna(0)
+            return sum(df["EDSEAT"]*df["FINALWT"])
+        elif tipo == "Alojamiento":
+            microdatasi["LODGRM"] = microdatasi["LODGRM"].fillna(0)
+            return sum(df["LODGRM"]*df["FINALWT"])
+        elif tipo == "Comercio":
+            return sum(df["NWKER"]*df["FINALWT"])
+        elif tipo == "Servicios":
+            return sum(df["NWKER"]*df["FINALWT"])
+        elif tipo == "Otros":
+            return sum(df["NWKER"]*df["FINALWT"])
+        else:
+            return 0
 
     microdatasi["MFBTU"] = microdatasi["MFBTU"].fillna(0)
-    microdatasi["ELBTU"] = microdatasi["ELBTU"].fillna(0)
-    Consumo = (sum((microdatasi["MFBTU"]*microdatasi["FINALWT"]) + (microdatasi["ELBTU"]*microdatasi["FINALWT"])))
 
-    df_indicadores = pd.DataFrame([{
-        "Población [Millones]":"8.3",
-        "Superficie [Mm2]":sum(microdatasi["SQFT"])/1000000,
-        "Número de edificios":sum(microdatasi["FINALWT"]),
-        "Service Unit": Unidad_Servicio,
-        "Consumo [Mtoe]": Consumo,
-        }])
+    def crear_fila_indicadores(tipo_subtipo, nombre_fila, df, tipo_edificio):
+        Consumo = sum(df["MFBTU"]*df["FINALWT"])
+
+        return {
+            "Categoría":tipo_subtipo,
+            "Tipo/Subtipo": nombre_fila,
+            "Población [Millones]":"342",
+            "Superficie [Mm2]":sum(df["SQFT"]*df["FINALWT"])/1000000,
+            "Número de edificios":sum(df["FINALWT"]),
+            "Service Unit": calcular_unidad_servicio(df, tipo_edificio),
+            "Consumo [Mtoe]": Consumo,
+            }
+    
+    filas_indicadores = []
+
+    if subtipo is None:
+        filas_indicadores.append(
+            crear_fila_indicadores("Tipo", tipo, microdatasi, tipo)
+        )
+
+        subtipos_del_tipo = SUBTIPOS_POR_TIPO[tipo]
+
+        tipo_y_subtipo_iguales = (
+            len(subtipos_del_tipo) == 1
+            and subtipos_del_tipo[0] == tipo
+        )
+
+        if not tipo_y_subtipo_iguales:
+            for subtipo_iterado in subtipos_del_tipo:
+                if subtipo_iterado is not None:
+                    df_subtipo = filter_by_subtype(microdatasi, subtipo_iterado)
+
+                    if not df_subtipo.empty:
+                        filas_indicadores.append(
+                            crear_fila_indicadores("Subtipo", subtipo_iterado, df_subtipo, tipo)
+                        )
+
+    else:
+        filas_indicadores.append(
+            crear_fila_indicadores("Subtipo", subtipo, microdatasi, tipo)
+        )
+
+    # -----------------------------------------
+    def division_segura(numerador, denominador):
+        if denominador is None or denominador == 0:
+            return np.nan
+        return numerador / denominador
+
+    
+    def calcular_consumo_mtoe(df):
+        return (df["MFBTU"].fillna(0) * df["FINALWT"]).sum()
+
+
+    def crear_fila_indicadores_derivados(tipo_subtipo, nombre_fila, df, tipo_edificio):
+        area_m2 = (df["SQFT"] * df["FINALWT"]).sum()
+        numero_edificios = df["FINALWT"].sum()
+        service_unit = calcular_unidad_servicio(df, tipo_edificio)
+        consumo_mtoe = calcular_consumo_mtoe(df)
+
+        # Como consumo_mtoe está en Mtoe:
+        consumo_kwh = consumo_mtoe / KWH_TO_MTOE
+
+        # Población en unidades, no en millones
+        poblacion = 342 * 1000000
+
+        if service_unit == "No aplica":
+            area_por_su = "No aplica"
+            service_penetration_factor = "No aplica"
+            energy_per_service_unit = "No aplica"
+        elif service_unit == 0:
+            area_por_su = 0
+            service_penetration_factor = 0
+            energy_per_service_unit = 0
+        else:
+            area_por_su = area_m2 / service_unit
+            service_penetration_factor = poblacion / service_unit
+            energy_per_service_unit = consumo_kwh / service_unit
+
+        return {
+            "Categoría": tipo_subtipo,
+            "Tipo/Subtipo": nombre_fila,
+            "Tamaño medio [m²/edif]": division_segura(area_m2, numero_edificios),
+            "Área/SU [m²/SU]": area_por_su,
+            "Service Penetration Factor [hab/SU]": service_penetration_factor,
+            "Energy per Service Unit [kWh/SU]": energy_per_service_unit,
+            "Energy Intensity [kWh/m²]": division_segura(consumo_kwh, area_m2),
+        }
+
+    df_indicadores = pd.DataFrame(filas_indicadores)
+
+    filas_indicadores_derivados = []
+
+    if subtipo is None:
+        filas_indicadores_derivados.append(
+            crear_fila_indicadores_derivados("Tipo", tipo, microdatasi, tipo)
+        )
+
+        subtipos_del_tipo = SUBTIPOS_POR_TIPO[tipo]
+
+        tipo_y_subtipo_iguales = (
+            len(subtipos_del_tipo) == 1
+            and subtipos_del_tipo[0] == tipo
+        )
+
+        if not tipo_y_subtipo_iguales:
+            for subtipo_iterado in subtipos_del_tipo:
+                if subtipo_iterado is not None:
+                    df_subtipo = filter_by_subtype(microdatasi, subtipo_iterado)
+
+                    if not df_subtipo.empty:
+                        filas_indicadores_derivados.append(
+                            crear_fila_indicadores_derivados(
+                                "Subtipo",
+                                subtipo_iterado,
+                                df_subtipo,
+                                tipo
+                            )
+                        )
+
+    else:
+        filas_indicadores_derivados.append(
+            crear_fila_indicadores_derivados("Subtipo", subtipo, microdatasi, tipo)
+        )
+
+    df_indicadores_derivados = pd.DataFrame(filas_indicadores_derivados)
 
     st.subheader("Indicadores Clave")
+
+    if tipo != "Vacíos":
+        st.dataframe(
+            df_indicadores.style.format({
+            "Superficie [Mm2]": "{:.0f}",
+            "Número de edificios": "{:.0f}",
+            "Service Unit": "{:.0f}",
+            "Consumo [Mtoe]": "{:.2f}",
+            }),
+            use_container_width=True,
+            hide_index=True,
+        )
+    else: #con esto consigo que si el tipo = Vacío, se escriba "No aplica" para el Service Unit
+          # y no me de fallo al querer darle formato float
+        st.dataframe(
+            df_indicadores.style.format({
+            "Superficie [Mm2]": "{:.0f}",
+            "Número de edificios": "{:.0f}",
+            # "Service Unit": "{:.0f}",
+            "Consumo [Mtoe]": "{:.3f}",
+            }),
+            use_container_width=True,
+            hide_index=True,
+        )
+    
+    def formato_mixto(valor):
+        if isinstance(valor, str):
+            return valor
+        elif pd.isna(valor):
+            return "No aplica"
+        else:
+            return f"{valor:.2f}"
+
     st.dataframe(
-        df_indicadores.style.format({
-        "Superficie [Mm2]": "{:.0f}",
-        "Número de edificios": "{:.0f}",
-        "Service Unit": "{:.0f}",
-        "Consumo [Mtoe]": "{:.3f}",
-        }),
+        df_indicadores_derivados.style.format(
+            {
+                "Tamaño medio [m²/edif]": formato_mixto,
+                "Área/SU [m²/SU]": formato_mixto,
+                "Service Penetration Factor [hab/SU]": formato_mixto,
+                "Energy per Service Unit [kWh/SU]": formato_mixto,
+                "Energy Intensity [kWh/m²]": formato_mixto,
+            },
+            na_rep="No aplica",
+        ),
         use_container_width=True,
         hide_index=True,
     )
@@ -757,10 +913,12 @@ elif grafica_idx == "Distribución del consumo por tamaño":
 
     st.title("ESTAN MAL LAS UNIDADES KTOE ASI?")
 
-    sqftcm_ranges = [1, 2, 3]
-    labels = ['S', 'M', 'L']
+    sqftcm_ranges = list(range(1, len(nombres_simples) + 1))
+    labels = nombres_simples
+
     total_consumption_values = []
     media_consumo_por_edificio = []
+    numero_edificios = []
 
     for sqftcm in sqftcm_ranges:
         edi = microdatasi.query(f'SQFTCM == {sqftcm}')
@@ -768,6 +926,7 @@ elif grafica_idx == "Distribución del consumo por tamaño":
         total_consumption_values.append(total_consumption)
 
         total_wt = edi['FINALWT'].sum()
+        numero_edificios.append(total_wt)
         if total_wt > 0:
             media_consumo = (total_consumption / total_wt) * 1000
         else:
@@ -778,11 +937,9 @@ elif grafica_idx == "Distribución del consumo por tamaño":
     df_consumo_tamano = pd.DataFrame({
         "Tamaño": labels,
         "Consumo (Mtoe)": total_consumption_values,
-        "EDI": total_wt,
+        "Nº Edificios": numero_edificios,
         "Consumo medio (ktoe/Edif)": media_consumo_por_edificio,
     })
-
-    st.title("PARECE QUE EL NÚMERO DE EDIFCIOS ESTA MAL PORQUE DICE QUE ES EL MISMO EN LAS TRES CATEGORIAS")
 
     render_horizontal_percentage_bar(
         df_consumo_tamano,
@@ -981,20 +1138,18 @@ elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
     usos_labels = USOS_LABELS
     colors = COLORES_USOS
 
-    # Inicialización de los datos por clima
-    climates = ['S', 'M', 'L']
+    climates = nombres_simples
     climate_consumptions = []
 
-    # Selección de edificios comerciales por cada zona climática
-    for SQFTCM in range(1, 4):
+    for SQFTCM in range(1, len(nombres_simples) + 1):
         Edi = microdatasi.query(f'SQFTCM == {SQFTCM}')
         consumos = []
-        total_consumo = (Edi[usos] * Edi['FINALWT'].values.reshape(-1, 1)).sum()  # Suma de todos los consumos para el tamaño actual
+        total_consumo = (Edi[usos] * Edi['FINALWT'].values.reshape(-1, 1)).sum()
 
         # Normalización para obtener porcentajes
         for uso in usos:
             consumo = (Edi[uso] * Edi['FINALWT']).sum()
-            consumos.append(consumo / total_consumo.sum() * 100)  # Normalización a porcentaje
+            consumos.append(consumo / total_consumo.sum() * 100) 
 
         climate_consumptions.append(consumos)
 
@@ -1276,14 +1431,14 @@ elif grafica_idx == "Consumo de Energía por Clima y Tipo de Energía":
 
 elif grafica_idx == "Consumo de Energía por Tamaño y Tipo de Energía":
     consumos = {
-        'Tamaño': ['S', 'M', 'L'],
+        'Tamaño': nombres_simples,
         'Eléctrico': [],
         'Gas natural': [],
         'Fuel Oil': [],
         'Vapor de distrito': []
     }
 
-    tamanos = [1, 2, 3]
+    tamanos = list(range(1, len(nombres_simples)+1))
     energias = ['ELBTU', 'NGBTU', 'FKBTU', 'DHBTU']
     nombres_energias = ['Eléctrico', 'Gas natural', 'Fuel Oil', 'Vapor de distrito']
 
