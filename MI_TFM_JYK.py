@@ -155,10 +155,10 @@ CLASIF_TIPO_GRAFICA = {
         "Estructura por Edad",
     ],
     "Consumo": [
-        "Distribución del consumo por tamaño",
+        "Estructura del consumo por tamaño",
         "Estructura del consumo por usos",
         "Estructura del consumo por fuentes",
-        "Distribución del consumo por Usos Finales y Tipo de Energía",
+        "Estructura del consumo por Usos Finales y Tipo de Energía",
     ],
     "Consumo por Usos Finales": [
         "Análisis del Consumo por Clima y Usos Finales",
@@ -474,7 +474,7 @@ if tamaño is not None:
     if tamaño is not None and grafica_tipo == "Stock":
         graficas = remove_graph_option(graficas, "Estructura por Tamaño")
     elif tamaño is not None and grafica_tipo == "Consumo":
-        graficas = remove_graph_option(graficas, "Distribución del consumo por tamaño")
+        graficas = remove_graph_option(graficas, "Estructura del consumo por tamaño")
     elif tamaño is not None and grafica_tipo == "Consumo por Usos Finales":
         graficas = remove_graph_option(graficas, "Análisis del Consumo por tamaño y Usos Finales")
     elif tamaño is not None and grafica_tipo == "Consumo por Tipo de Energía":
@@ -533,18 +533,18 @@ if grafica_tipo == "Indicadores Clave":
             return sum(df["NWKER"]*df["FINALWT"])
         elif tipo == "Almacenes":
             return sum(df["NWKER"]*df["FINALWT"])
-        elif tipo == "Alimentación":
+        elif tipo == "Alimentación": #PUEDO PONER NWKER Y ASÍ DAN TODOS VALORES DISTINTOS A CERO
             microdatasi["FDSEAT"] = microdatasi["FDSEAT"].fillna(0)
             return sum(df["FDSEAT"]*df["FINALWT"])
         elif tipo == "Edificio público":
             return sum(df["NWKER"]*df["FINALWT"])
-        elif tipo == "Sanitario":
+        elif tipo == "Sanitario": #PUEDO PONER NWKER Y ASÍ DAN TODOS VALORES DISTINTOS A CERO
             microdatasi["HCBED"] = microdatasi["HCBED"].fillna(0)
             return sum(df["HCBED"]*df["FINALWT"])
         elif tipo == "Educación":
             microdatasi["EDSEAT"] = microdatasi["EDSEAT"].fillna(0)
             return sum(df["EDSEAT"]*df["FINALWT"])
-        elif tipo == "Alojamiento":
+        elif tipo == "Alojamiento": #PUEDO PONER NWKER Y ASÍ DAN TODOS VALORES DISTINTOS A CERO
             microdatasi["LODGRM"] = microdatasi["LODGRM"].fillna(0)
             return sum(df["LODGRM"]*df["FINALWT"])
         elif tipo == "Comercio":
@@ -746,7 +746,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_idx} - {tipo}</div>",
+    f"<div style='text-align: center; font-size:2.0em; font-weight:600;'>{grafica_idx}</div>",
     unsafe_allow_html=True,
 )
 
@@ -909,7 +909,7 @@ elif grafica_idx == "Estructura por Clima":
         },
     )
 
-elif grafica_idx == "Distribución del consumo por tamaño":
+elif grafica_idx == "Estructura del consumo por tamaño":
 
     st.title("ESTAN MAL LAS UNIDADES KTOE ASI?")
 
@@ -1239,7 +1239,7 @@ elif grafica_idx == "Estructura del consumo por fuentes":
         },
     )
 
-elif grafica_idx == "Distribución del consumo por Usos Finales y Tipo de Energía":
+elif grafica_idx == "Estructura del consumo por Usos Finales y Tipo de Energía":
     # Selección de edificios comerciales 
     Edi = microdatasi.copy()
 
@@ -1317,7 +1317,7 @@ elif grafica_idx == "Distribución del consumo por Usos Finales y Tipo de Energ�
     ax.set_xlabel('Usos Finales', fontsize=14)
     ax.set_ylabel('Porcentaje de Consumo (%)', fontsize=14)
     ax.set_title(
-        f'Distribución del Consumo de Energía por Usos Finales y Tipo de Energía\n',
+        f'Estructura del Consumo de Energía por Usos Finales y Tipo de Energía\n',
         fontsize=16
     )
 
