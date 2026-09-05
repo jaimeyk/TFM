@@ -686,6 +686,8 @@ if grafica_tipo == "Indicadores Clave":
 
     st.subheader("Indicadores Clave")
 
+    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+
     if tipo != "Vacíos":
         st.dataframe(
             df_indicadores.style.format({
@@ -709,6 +711,8 @@ if grafica_tipo == "Indicadores Clave":
             use_container_width=True,
             hide_index=True,
         )
+
+    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
     def formato_mixto(valor):
         if isinstance(valor, str):
