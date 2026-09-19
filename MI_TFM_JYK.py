@@ -156,8 +156,8 @@ CLASIF_TIPO_GRAFICA = {
     ],
     "Consumo": [
         "Estructura del consumo por tamaño",
-        "Estructura del consumo por usos",
-        "Estructura del consumo por fuentes",
+        "Estructura del consumo por Usos Finales",
+        "Estructura del consumo por Tipo de Energía",
         "Estructura del consumo por Usos Finales y Tipo de Energía",
     ],
     "Consumo por Usos Finales": [
@@ -224,7 +224,6 @@ def load_and_prepare_data(path: str) -> pd.DataFrame:
 
 
 def classify_size(df: pd.DataFrame, tipo: str) -> pd.DataFrame:
-    """Crea SQFTCM según el tipo de edificio, con los mismos cortes del código original."""
     df = df.copy()
     df['SQFTCM'] = np.nan
 
@@ -827,7 +826,7 @@ elif grafica_idx == "Estructura por Edad":
         return total_edi, media_edi
 
     rangos_yrconcn = [1, 2, 3, 4]
-    nombres_rangos = ['Antes 1960', '1960-1980', '1980-2000', '2000-2018']
+    nombres_rangos = EDAD_EDIFICIO
 
     totales = []
     medias = []
@@ -964,7 +963,7 @@ elif grafica_idx == "Estructura del consumo por tamaño":
         },
     )
 
-elif grafica_idx == "Estructura del consumo por usos":
+elif grafica_idx == "Estructura del consumo por Usos Finales":
     usos = ['MFHTBTU', 'MFCLBTU', 'MFVNBTU', 'MFWTBTU', 'MFLTBTU', 'MFCKBTU', 'MFRFBTU', 'MFOFBTU', 'MFPCBTU', 'MFOTBTU']
     usos_labels = ['Calefacción', 'Aire acondicionado', 'Ventilación', 'ACS', 'Iluminación', 'Cocina', 'Refrigeración', 'Equipos Oficina', 'Computación', 'Otros']
 
@@ -1091,7 +1090,7 @@ elif grafica_idx == "Análisis del Consumo por Edad y Usos Finales":
     colors = COLORES_USOS
 
     # Inicialización de los datos por clima
-    climates = ['Antes 1960', '1960-1980', '1980-2000', '2000-2018']
+    climates = EDAD_EDIFICIO
     climate_consumptions = []
 
     # Selección de edificios comerciales por cada zona climática
@@ -1185,7 +1184,7 @@ elif grafica_idx == "Análisis del Consumo por tamaño y Usos Finales":
         {col: "{:.2f}" for col in df_resultados.columns if col != "Tamaño"},
     )
 
-elif grafica_idx == "Estructura del consumo por fuentes":
+elif grafica_idx == "Estructura del consumo por Tipo de Energía":
     fuentes = ['ELBTU', 'NGBTU', 'FKBTU', 'DHBTU']
     fuentes_labels = FUENTES_LABELS
 
@@ -1516,7 +1515,7 @@ elif grafica_idx == "Consumo de Energía por Tamaño y Tipo de Energía":
 
 elif grafica_idx == "Consumo de Energía por Edad y Tipo de Energía":
     consumos = {
-        'Edad': ['Antes 1960', '1960-1980', '1980-2000', '2000-2018'],
+        'Edad': EDAD_EDIFICIO,
         'Eléctrico': [],
         'Gas natural': [],
         'Fuel Oil': [],
