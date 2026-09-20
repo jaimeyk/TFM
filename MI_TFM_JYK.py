@@ -640,7 +640,7 @@ if grafica_tipo == "Indicadores Clave":
             "Tipo/Subtipo": nombre_fila,
             "Tamaño medio [m²/edif]": division_segura(area_m2, numero_edificios),
             "Área/SU [m²/SU]": area_por_su,
-            "Service Penetration Factor [hab/SU]": service_penetration_factor,
+            "Service Penetration Factor [pob/SU]": service_penetration_factor,
             "Energy per Service Unit [kWh/SU]": energy_per_service_unit,
             "Energy Intensity [kWh/m²]": division_segura(consumo_kwh, area_m2),
         }
@@ -726,7 +726,7 @@ if grafica_tipo == "Indicadores Clave":
             {
                 "Tamaño medio [m²/edif]": formato_mixto,
                 "Área/SU [m²/SU]": formato_mixto,
-                "Service Penetration Factor [hab/SU]": formato_mixto,
+                "Service Penetration Factor [pob/SU]": formato_mixto,
                 "Energy per Service Unit [kWh/SU]": formato_mixto,
                 "Energy Intensity [kWh/m²]": formato_mixto,
             },
