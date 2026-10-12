@@ -914,8 +914,6 @@ elif grafica_idx == "Estructura por Clima":
 
 elif grafica_idx == "Estructura del consumo por tamaño":
 
-    st.title("ESTAN MAL LAS UNIDADES KTOE ASI?")
-
     sqftcm_ranges = list(range(1, len(nombres_simples) + 1))
     labels = nombres_simples
 
