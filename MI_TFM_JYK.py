@@ -452,6 +452,10 @@ microdatasi = filter_by_subtype(microdatasi, subtipo)
 
 stop_if_empty(microdatasi)
 
+# Base para calcular el Service Penetration Factor:
+# conserva tipo y subtipo, pero todavía no tiene filtros de tamaño, clima ni edad
+microdatasi_base_spf = microdatasi.copy()
+
 # Filtro por tamaño
 microdatasi = classify_size(microdatasi, tipo)
 tamaño_edificio = SIZE_CONFIG[tipo]['labels']
@@ -525,33 +529,117 @@ if edad is not None:
 
 if grafica_tipo == "Indicadores Clave":
 
-    def calcular_unidad_servicio(df, tipo_edificio):
-        if tipo == "Vacíos":
+    def calcular_unidad_servicio(df, categoria):
+        df = df.copy()
+
+        if categoria == "Vacíos":
             return "No aplica"
-        elif tipo == "Oficina":
-            return sum(df["NWKER"]*df["FINALWT"])
-        elif tipo == "Almacenes":
-            return sum(df["NWKER"]*df["FINALWT"])
-        elif tipo == "Alimentación": #PUEDO PONER NWKER Y ASÍ DAN TODOS VALORES DISTINTOS A CERO
-            microdatasi["FDSEAT"] = microdatasi["FDSEAT"].fillna(0)
-            return sum(df["FDSEAT"]*df["FINALWT"])
-        elif tipo == "Edificio público":
-            return sum(df["NWKER"]*df["FINALWT"])
-        elif tipo == "Sanitario": #PUEDO PONER NWKER Y ASÍ DAN TODOS VALORES DISTINTOS A CERO
-            microdatasi["HCBED"] = microdatasi["HCBED"].fillna(0)
-            return sum(df["HCBED"]*df["FINALWT"])
-        elif tipo == "Educación":
-            microdatasi["EDSEAT"] = microdatasi["EDSEAT"].fillna(0)
-            return sum(df["EDSEAT"]*df["FINALWT"])
-        elif tipo == "Alojamiento": #PUEDO PONER NWKER Y ASÍ DAN TODOS VALORES DISTINTOS A CERO
-            microdatasi["LODGRM"] = microdatasi["LODGRM"].fillna(0)
-            return sum(df["LODGRM"]*df["FINALWT"])
-        elif tipo == "Comercio":
-            return sum(df["NWKER"]*df["FINALWT"])
-        elif tipo == "Servicios":
-            return sum(df["NWKER"]*df["FINALWT"])
-        elif tipo == "Otros":
-            return sum(df["NWKER"]*df["FINALWT"])
+
+        elif categoria in [
+            "Oficina",
+            "Almacenes",
+            "Centro de distribución",
+            "Almacén sin refrigeración",
+            "Alquiler de almacenes públicos",
+            "Almacén con refrigeración",
+            "Edificio público",
+            "Orden público",
+            "Religión",
+            "Servicio público",
+            "Comercio",
+            "Centro comercial",
+            "Tiendas",
+            "Servicios",
+            "Otros",
+            "Laboratorio",
+            "Venta de alimentos",
+            "Ambulatorio",
+            "Residencia de ancianos",
+        ]:
+            return (df["NWKER"].fillna(0) * df["FINALWT"]).sum()
+
+        elif categoria == "Restauración":
+            return (df["FDSEAT"].fillna(0) * df["FINALWT"]).sum()
+
+        elif categoria == "Alimentación":
+            df_venta = filter_by_subtype(df, "Venta de alimentos")
+            df_restauracion = filter_by_subtype(df, "Restauración")
+
+            su_venta = (df_venta["NWKER"].fillna(0) * df_venta["FINALWT"]).sum()
+            su_restauracion = (df_restauracion["FDSEAT"].fillna(0) * df_restauracion["FINALWT"]).sum()
+
+            return su_venta + su_restauracion
+
+        elif categoria == "Hospital":
+            return (df["HCBED"].fillna(0) * df["FINALWT"]).sum()
+
+        elif categoria == "Sanitario":
+            df_hospital = filter_by_subtype(df, "Hospital")
+            df_ambulatorio = filter_by_subtype(df, "Ambulatorio")
+
+            su_hospital = (df_hospital["HCBED"].fillna(0) * df_hospital["FINALWT"]).sum()
+            su_ambulatorio = (df_ambulatorio["NWKER"].fillna(0) * df_ambulatorio["FINALWT"]).sum()
+
+            return su_hospital + su_ambulatorio
+
+        elif categoria in [
+            "Educación",
+            "Infantil/Guardería",
+            "Escuela primaria",
+            "Escuela secundaria",
+            "Bachillerato",
+            "Universidad",
+        ]:
+            return (df["EDSEAT"].fillna(0) * df["FINALWT"]).sum()
+
+        elif categoria in [
+            "Residencia universitaria",
+            "Hotel",
+            "Motel/B&B",
+            "Otro hospedaje",
+        ]:
+            return (df["LODGRM"].fillna(0) * df["FINALWT"]).sum()
+
+        elif categoria == "Alojamiento":
+            df_residencia_ancianos = filter_by_subtype(df, "Residencia de ancianos")
+            df_residencia_universitaria = filter_by_subtype(df, "Residencia universitaria")
+            df_hotel = filter_by_subtype(df, "Hotel")
+            df_motel = filter_by_subtype(df, "Motel/B&B")
+            df_otro = filter_by_subtype(df, "Otro hospedaje")
+
+            su_residencia_ancianos = (
+                df_residencia_ancianos["NWKER"].fillna(0)
+                * df_residencia_ancianos["FINALWT"]
+            ).sum()
+
+            su_residencia_universitaria = (
+                df_residencia_universitaria["LODGRM"].fillna(0)
+                * df_residencia_universitaria["FINALWT"]
+            ).sum()
+
+            su_hotel = (
+                df_hotel["LODGRM"].fillna(0)
+                * df_hotel["FINALWT"]
+            ).sum()
+
+            su_motel = (
+                df_motel["LODGRM"].fillna(0)
+                * df_motel["FINALWT"]
+            ).sum()
+
+            su_otro = (
+                df_otro["LODGRM"].fillna(0)
+                * df_otro["FINALWT"]
+            ).sum()
+
+            return (
+                su_residencia_ancianos
+                + su_residencia_universitaria
+                + su_hotel
+                + su_motel
+                + su_otro
+            )
+
         else:
             return 0
 
@@ -566,7 +654,7 @@ if grafica_tipo == "Indicadores Clave":
             "Población [Millones]":"342",
             "Superficie [Mm2]":sum(df["SQFT"]*df["FINALWT"])/1000000,
             "Número de edificios":sum(df["FINALWT"]),
-            "Service Unit": calcular_unidad_servicio(df, tipo_edificio),
+            "Service Unit": calcular_unidad_servicio(df, nombre_fila),
             "Consumo [Mtoe]": Consumo,
             }
     
@@ -610,10 +698,25 @@ if grafica_tipo == "Indicadores Clave":
         return (df["MFBTU"].fillna(0) * df["FINALWT"]).sum()
 
 
-    def crear_fila_indicadores_derivados(tipo_subtipo, nombre_fila, df, tipo_edificio):
+    def crear_fila_indicadores_derivados(
+        tipo_subtipo,
+        nombre_fila,
+        df,
+        tipo_edificio,
+        df_base_spf=None
+    ):
         area_m2 = (df["SQFT"] * df["FINALWT"]).sum()
         numero_edificios = df["FINALWT"].sum()
-        service_unit = calcular_unidad_servicio(df, tipo_edificio)
+
+        # SU filtrado: se usa para Área/SU y Energy per Service Unit
+        service_unit = calcular_unidad_servicio(df, nombre_fila)
+
+        # SU base para SPF: mantiene tipo/subtipo, pero ignora clima/tamaño/edad
+        if df_base_spf is None:
+            df_base_spf = df
+
+        service_unit_spf = calcular_unidad_servicio(df_base_spf, nombre_fila)
+
         consumo_mtoe = calcular_consumo_mtoe(df)
 
         # Como consumo_mtoe está en Mtoe:
@@ -624,16 +727,20 @@ if grafica_tipo == "Indicadores Clave":
 
         if service_unit == "No aplica":
             area_por_su = "No aplica"
-            service_penetration_factor = "No aplica"
             energy_per_service_unit = "No aplica"
         elif service_unit == 0:
             area_por_su = 0
-            service_penetration_factor = 0
             energy_per_service_unit = 0
         else:
             area_por_su = area_m2 / service_unit
-            service_penetration_factor = poblacion / service_unit
             energy_per_service_unit = consumo_kwh / service_unit
+
+        if service_unit_spf == "No aplica":
+            service_penetration_factor = "No aplica"
+        elif service_unit_spf == 0:
+            service_penetration_factor = 0
+        else:
+            service_penetration_factor = poblacion / service_unit_spf
 
         return {
             "Categoría": tipo_subtipo,
@@ -651,7 +758,7 @@ if grafica_tipo == "Indicadores Clave":
 
     if subtipo is None:
         filas_indicadores_derivados.append(
-            crear_fila_indicadores_derivados("Tipo", tipo, microdatasi, tipo)
+            crear_fila_indicadores_derivados("Tipo", tipo, microdatasi, tipo, microdatasi_base_spf)
         )
 
         subtipos_del_tipo = SUBTIPOS_POR_TIPO[tipo]
@@ -665,6 +772,7 @@ if grafica_tipo == "Indicadores Clave":
             for subtipo_iterado in subtipos_del_tipo:
                 if subtipo_iterado is not None:
                     df_subtipo = filter_by_subtype(microdatasi, subtipo_iterado)
+                    df_subtipo_base_spf = filter_by_subtype(microdatasi_base_spf, subtipo_iterado)
 
                     if not df_subtipo.empty:
                         filas_indicadores_derivados.append(
@@ -672,13 +780,14 @@ if grafica_tipo == "Indicadores Clave":
                                 "Subtipo",
                                 subtipo_iterado,
                                 df_subtipo,
-                                tipo
+                                tipo,
+                                df_subtipo_base_spf
                             )
                         )
 
     else:
         filas_indicadores_derivados.append(
-            crear_fila_indicadores_derivados("Subtipo", subtipo, microdatasi, tipo)
+            crear_fila_indicadores_derivados("Subtipo", subtipo, microdatasi, tipo, microdatasi_base_spf)
         )
 
     df_indicadores_derivados = pd.DataFrame(filas_indicadores_derivados)
